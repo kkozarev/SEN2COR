@@ -1,0 +1,13 @@
+bin/
+cfg/.estimation
+dem/
+log/
+src/build/
+src/L2A_AtmCorr.*
+*.o
+.p*
+*.pyc
+*~
+.spyderproject
+.DS_Store
+.settings
