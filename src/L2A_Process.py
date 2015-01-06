@@ -140,11 +140,10 @@ class L2A_Process(object):
             self.config.timestamp('L2A_Process: start of Atmospheric Correction')
             self.config.tracer.info('Performing Atmospheric Correction with resolution %d m', self.config.resolution)
             self.config.logger.info('Performing Atmospheric Correction with resolution %d m', self.config.resolution)
-            '''
             ac = L2A_AtmCorr(self.config, self.tables)
             if(ac.process() == False):
                 return False
-            '''
+
         self.config.timestamp('L2A_Process: start of post processing')
         if(self.postprocess() == False):
             return False

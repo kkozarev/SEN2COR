@@ -1550,6 +1550,7 @@ def adjacency_weight(nadj_regions, adj_km, pixelsize):
 
 #-----------------------------------------------------------------------
 def load_wv_tables_summer():
+    from L2A_Config import L2A_Config
     msg = 'Load water vapour tables for summer period'
     L2A_Config().tracer.debug(msg)
 # Output:
@@ -1624,6 +1625,7 @@ def load_wv_tables_summer():
 
 #-----------------------------------------------------------------------------------
 def load_wv_tables_winter():
+    from L2A_Config import L2A_Config
     msg = 'Load water vapour tables for winter period'
     L2A_Config().tracer.debug(msg)
 #
@@ -1680,7 +1682,7 @@ def load_wv_tables_winter():
 #------------------------------------------------------------------------------------------
 def check_required_cirrus_bands(unit_log, iwaterwv, red_band, nir_band, snow_band, swir2_band):
 # check if water vapor band, swir2_band, nir_band, and (red or snow band) exist
-
+    from L2A_Config import L2A_Config
     ierror = 1
     if (iwaterwv == 0):
         L2A_Config().tracer.error('Cirrus correction requires calculation of water vapor map (iwaterwv > 0)')
