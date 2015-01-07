@@ -14,7 +14,7 @@ from tables.description import *
 from distutils.dir_util import copy_tree, mkpath
 from distutils.file_util import copy_file
 from L2A_Config import L2A_Config
-from L2A_Library import rectBivariateSpline, stdoutWrite
+from L2A_Library import rectBivariateSpline, stdoutWrite, showImage
 from lxml import etree, objectify
 from L2A_XmlParser import L2A_XmlParser
 from L2A_Borg import Borg

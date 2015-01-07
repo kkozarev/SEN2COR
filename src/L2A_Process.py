@@ -13,7 +13,7 @@ from L2A_Tables import L2A_Tables
 from L2A_SceneClass import L2A_SceneClass
 from L2A_AtmCorr import L2A_AtmCorr
 from L2A_XmlParser import L2A_XmlParser
-from L2A_Library import stdoutWrite, stderrWrite
+from L2A_Library import stdoutWrite, stderrWrite, showImage
 from lxml import etree, objectify
 
 
