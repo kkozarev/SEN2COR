@@ -79,11 +79,10 @@ class L2A_Tables(Borg):
             bandDir = '/R60m'
 
         BANDS = bandDir
-        Creation_Date = self.config.creationDate
-
+        #Creation_Date = self.config.creationDate
         # generate new Tile ID:
         L2A_TILE_ID = L1C_TILE_ID[:4] + 'USER' + L1C_TILE_ID[8:]
-        L2A_TILE_ID = L2A_TILE_ID[:25] + Creation_Date + L2A_TILE_ID[40:]
+        #L2A_TILE_ID = L2A_TILE_ID[:25] + Creation_Date + L2A_TILE_ID[40:]
         L2A_TILE_ID = L2A_TILE_ID.replace('L1C_', 'L2A_')
         self.config.L2A_TILE_ID = L2A_TILE_ID
         L2A_TILE_ID_SHORT = '/' + L2A_TILE_ID[:55]
@@ -109,7 +108,6 @@ class L2A_Tables(Borg):
         L1C_TILE_MTD_XML = L1C_TILE_ID + '/' + filename
         L2A_TILE_MTD_XML = filename
         L2A_TILE_MTD_XML = L2A_TILE_MTD_XML[:4] + 'USER' + L2A_TILE_MTD_XML[8:]
-        L2A_TILE_MTD_XML = L2A_TILE_MTD_XML[:25] + Creation_Date + L2A_TILE_MTD_XML[40:]
         L2A_TILE_MTD_XML = L2A_TILE_MTD_XML.replace('L1C_', 'L2A_')
         L2A_TILE_MTD_XML = L2A_TILE_ID + '/' + L2A_TILE_MTD_XML
         self.config.L1C_TILE_MTD_XML = L1C_TILE_MTD_XML
