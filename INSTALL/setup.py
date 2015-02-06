@@ -23,7 +23,7 @@ for root, dirs, files in os.walk(path, topdown=False):
         os.chmod(file, 0444)
 
 os.chmod(home+'/SEN2COR/src/L2A_Process.py', 0554)
-if((os.path.isfile(home+'/SEN2COR/bin/L2A_Process')) == True):
+if os.path.isfile(home+'/SEN2COR/bin/L2A_Process'):
     os.remove(home+'/SEN2COR/bin/L2A_Process')
 os.symlink(home+'/SEN2COR/src/L2A_Process.py',home+'/SEN2COR/bin/L2A_Process')
 print 'Installation performed.'
