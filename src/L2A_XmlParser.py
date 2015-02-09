@@ -183,7 +183,7 @@ class L2A_XmlParser(Borg):
 
         for i in range(nrows):
             a[i,:] = nan_to_num(array(node[i].text.split(),dtype(int)))
-        
+            
         return a
 
 
@@ -197,6 +197,7 @@ class L2A_XmlParser(Borg):
         
         for i in range(nrows):
             a[i,:] = nan_to_num(array(node[i].text.split(),dtype(uint)))
+            
         return a
 
     
@@ -210,7 +211,7 @@ class L2A_XmlParser(Borg):
         
         for i in range(nrows):
             a[i,:] = nan_to_num(array(node[i].text.split(),dtype(float32)))
-            print a
+            
         return a
 
 
@@ -254,7 +255,6 @@ class L2A_XmlParser(Borg):
                     a = self.getFloatArray(node[i].Zenith.Values_List.VALUES)
                 elif _type == 'Azimuth':
                     a = self.getFloatArray(node[i].Azimuth.Values_List.VALUES)
-
                 return a
         return False
 
