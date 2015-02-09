@@ -182,7 +182,7 @@ class L2A_XmlParser(Borg):
         a = zeros([nrows,ncols],dtype=int)        
 
         for i in range(nrows):
-            a[i,:] = array(node[i].text.split(),dtype(int))
+            a[i,:] = nan_to_num(array(node[i].text.split(),dtype(int)))
         
         return a
 
@@ -196,8 +196,7 @@ class L2A_XmlParser(Borg):
         a = zeros([nrows,ncols],dtype=uint)
         
         for i in range(nrows):
-            a[i,:] = array(node[i].text.split(),dtype(uint))
-            
+            a[i,:] = nan_to_num(array(node[i].text.split(),dtype(uint)))
         return a
 
     
@@ -210,8 +209,8 @@ class L2A_XmlParser(Borg):
         a = zeros([nrows,ncols],dtype=float32)
         
         for i in range(nrows):
-            a[i,:] = array(node[i].text.split(),dtype(float32))
-            
+            a[i,:] = nan_to_num(array(node[i].text.split(),dtype(float32)))
+            print a
         return a
 
 
