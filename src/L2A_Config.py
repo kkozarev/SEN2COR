@@ -58,8 +58,8 @@ class L2A_Config(Borg):
             self._nrows = -1
             self._nbnds = -1
             self._tTotal = 0.0
-            self._zenith_angle = -1
-            self._azimuth_angle = -1
+            self._sza = -1
+            self._saa = -1
             self._GIPP = ''
             self._ECMWF = ''
             self._DEM = ''
@@ -646,11 +646,11 @@ class L2A_Config(Borg):
 
 
     def get_zenith_angle(self):
-        return self._zenith_angle
+        return self._sza
 
 
     def get_azimuth_angle(self):
-        return self._azimuth_angle
+        return self._saa
 
 
     def get_gipp(self):
@@ -674,11 +674,11 @@ class L2A_Config(Borg):
 
 
     def set_zenith_angle(self, value):
-        self._zenith_angle = value
+        self._sza = value
 
 
     def set_azimuth_angle(self, value):
-        self._azimuth_angle = value
+        self._saa = value
 
 
     def set_gipp(self, value):
@@ -702,11 +702,11 @@ class L2A_Config(Borg):
 
 
     def del_zenith_angle(self):
-        del self._zenith_angle
+        del self._sza
 
 
     def del_azimuth_angle(self):
-        del self._azimuth_angle
+        del self._saa
 
 
     def del_gipp(self):

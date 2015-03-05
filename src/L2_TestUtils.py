@@ -7,7 +7,7 @@ Created on Feb 24, 2012
 
 from numpy import *
 #from spectral import *
-from PIL import Image
+import Image
 import sys
 import os
 import fnmatch

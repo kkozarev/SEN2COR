@@ -163,14 +163,14 @@ class L2A_Process(object):
 
         # validate the meta data:
         xp = L2A_XmlParser(self.config, 'UP1C')
-        xp.validate()
         xp.export()
+        xp.validate()
         xp = L2A_XmlParser(self.config, 'T1C')
-        xp.validate()
         xp.export()
+        xp.validate()
         xp = L2A_XmlParser(self.config, 'DS1C')
-        xp.validate()
         xp.export()
+        xp.validate()
 
         if(self.tables.J2kToH5() == False):
             return False   

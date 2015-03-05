@@ -917,8 +917,9 @@ class L2A_Tables(Borg):
         utm_coordinate_system = osr.SpatialReference()
         utm_coordinate_system.SetWellKnownGeogCS("WGS84") # Set geographic coordinate system to handle lat/lon
         zone = zone1
-        n = ord(zone2)
-        if(n > ord('M')): # N:M is the equator zone
+        hemi = zone2
+        # SIITBX-48
+        if(hemi == 'N'): # N is Northern Hemisphere
             utm_coordinate_system.SetUTM(zone, 1)
         else:
             utm_coordinate_system.SetUTM(zone, 0)
