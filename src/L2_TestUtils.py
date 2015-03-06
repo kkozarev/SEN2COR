@@ -23,7 +23,10 @@ try:
 except ImportError:
     import gdal
     from gdalconst import *
-
+# SIITBX-47: to suppress user warning due to the fact that 
+# http://trac.osgeo.org/gdal/ticket/5480 is not implemented
+# in the current openJPEG driver for windows used by ANACONDA:
+gdal.PushErrorHandler('CPLQuietErrorHandler')
 
 def showImage(arr):
     if(arr.ndim) != 2:

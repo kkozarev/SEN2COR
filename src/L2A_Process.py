@@ -16,7 +16,6 @@ from L2A_XmlParser import L2A_XmlParser
 from L2A_Library import stdoutWrite, stderrWrite, showImage
 from lxml import etree, objectify
 
-
 class L2A_Process(object):
     def __init__(self, workdir):
         self._config = L2A_Config(workdir)
@@ -154,6 +153,7 @@ class L2A_Process(object):
     def preprocess(self):
         self.config.tracer.info('Pre-processing with resolution %d m', self.config.resolution)
         self.config.logger.info('Pre-processing with resolution %d m', self.config.resolution)
+        self.config.tTotal = 0
         # this is to check the config for the L2A_AtmCorr in ahead.
         # This has historical reasons due to ATCOR porting.
         # Should be moved to the L2A_Config for better design:
@@ -207,8 +207,12 @@ def main(args, config):
     if os.path.exists(args.directory) == False:
         stderrWrite('directory "%s" does not exist\n.' % args.directory)
         return False
-
-    processor = L2A_Process(args.directory)
+    # SIITBX-49: directory should not end with '/':
+    directory = args.directory
+    if directory[-1] == '/':
+        directory = directory[:-1]
+        
+    processor = L2A_Process(directory)
     processor.scOnly = args.sc_only
 
     HelloWorld = config.processorName +', '+ config.processorVersion +', created: '+ config.processorDate
@@ -217,6 +221,8 @@ def main(args, config):
     S2A_mask = 'S2A_*'
 
     # next statement creates L2A product Structure:
+    config.initLogAndTrace()
+    config.readPreferences()
     tiles = config.createL2A_UserProduct()
     for tile in tiles:
         if(fnmatch.fnmatch(tile, S2A_mask) == False):

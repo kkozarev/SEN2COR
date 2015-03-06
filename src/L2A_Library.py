@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from numpy import *
-from PIL import Image
 from scipy import ndimage
 from scipy import stats
 from scipy.signal import medfilt2d
@@ -14,7 +13,7 @@ from matplotlib import pyplot as plt
 
 import time
 import os, sys, fnmatch
-
+import Image
 
 def stdoutWrite(s):
     sys.stdout.write(s)

@@ -150,7 +150,20 @@ class L2A_Config(Borg):
             self._fnTrace = None
             self._fnLog = None
             self._creationDate = None
+            self._targetDirectory = None
             return
+
+    def get_t_total(self):
+        return self._tTotal
+
+
+    def set_t_total(self, value):
+        self._tTotal = value
+
+
+    def del_t_total(self):
+        del self._tTotal
+
 
     def get_l_2_a_wvp_quantification_value(self):
         return self.__L2A_WVP_QUANTIFICATION_VALUE
@@ -1844,7 +1857,7 @@ class L2A_Config(Borg):
     L2A_AOT_QUANTIFICATION_VALUE = property(get_l2a_aot_quantification_value, set_l2a_aot_quantification_value, del_l2a_aot_quantification_value, "L2A_AOT_QUANTIFICATION_VALUE's docstring")
     creationDate = property(get_creation_date, set_creation_date, del_creation_date, "creationDate's docstring")
     productVersion = property(get_product_version, set_product_version, del_product_version, "productVersion's docstring")
-
+    tTotal = property(get_t_total, set_t_total, del_t_total, "tTotal's docstring")
 
     def set_traceLevel(self, level):
         self.tracer.info('Log level will be updated to: %s', level)
@@ -1962,6 +1975,13 @@ class L2A_Config(Borg):
         #-------------------------------------------------------
         L2A_UP_ID = basename[:4] + 'USER' + basename[8:]
         L2A_UP_ID = L2A_UP_ID.replace('1C_', '2A_')
+        # SIITBX-55: alternative output directory for PDGS:
+        targetDir = self._targetDirectory
+        if targetDir != 'false':
+            dirname = targetDir
+            if(os.path.exists(dirname) == False):
+                os.mkdir(dirname)            
+            
         L2A_UP_DIR = dirname + '/' + L2A_UP_ID
         self._L2A_UP_DIR = L2A_UP_DIR
         self.L2A_UP_ID = L2A_UP_ID
@@ -2331,13 +2351,18 @@ class L2A_Config(Borg):
         node = xp.getRoot('Common_Section')
         if node is None: self.parNotFound(node)
 
-        par = node.DN_Scale
-        if par is None: self.parNotFound(par)
-        self.dnScale = float32(par.text)
-
         par = node.Trace_Level
         if par is None: self.parNotFound(par)
         self.traceLevel = par.text
+
+        par = node.DN_Scale
+        if par is None: self.parNotFound(par)
+        self.dnScale = float32(par.text)
+        
+        # SIITBX-55: alternative output directory for PDGS:
+        par = node.Target_Directory
+        if par is None: self.parNotFound(par)
+        self._targetDirectory = par.text    
 
     ### References:
         node = xp.getTree('Atmospheric_Correction', 'References')
@@ -2660,3 +2685,4 @@ class L2A_Config(Borg):
         par = doc.find(parameter)
         if par is None: self.parNotFound(parameter)
         return par.text
+    

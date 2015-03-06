@@ -7,9 +7,10 @@ import fnmatch
 import subprocess
 import sys, os
 import glob
+import Image
+
 from tables import *
 from numpy import *
-import numexpr as ne
 from tables.description import *
 from distutils.dir_util import copy_tree, mkpath
 from distutils.file_util import copy_file
@@ -18,7 +19,6 @@ from L2A_Library import rectBivariateSpline, stdoutWrite, showImage
 from lxml import etree, objectify
 from L2A_XmlParser import L2A_XmlParser
 from L2A_Borg import Borg
-from PIL import Image
 
 try:
     from osgeo import gdal,osr
@@ -27,7 +27,10 @@ try:
 except ImportError:
     import gdal,osr
     from gdalconst import *
-
+# SIITBX-47: to suppress user warning due to the fact that 
+# http://trac.osgeo.org/gdal/ticket/5480 is not implemented
+# in the current openJPEG driver for windows used by ANACONDA:
+gdal.PushErrorHandler('CPLQuietErrorHandler')
 
 class Particle(IsDescription):
     bandName = StringCol(8)
@@ -150,11 +153,13 @@ class L2A_Tables(Borg):
 
         if(os.path.exists(self._L2A_QualityDataDir) == False):
             mkpath(self._L2A_QualityDataDir)
-
+        
+        '''
         if(self.config.traceLevel == 'DEBUG'):
             self._testdir = L2A_TILE_ID + '/TESTS_' + str(self._resolution) + '/'
             if(os.path.exists(self._testdir) == False):
                 mkpath(self._testdir)
+        '''
         #
         # the File structure:
         #-------------------------------------------------------
@@ -171,7 +176,7 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
+        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.png'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -950,12 +955,14 @@ class L2A_Tables(Borg):
 
         self.config.logger.info('Start DEM alignment for tile')
         workDir = self.config.home + '/' + demDir
+        if(os.path.exists(workDir) == False):
+            mkpath(workDir)
         os.chdir(workDir)
 
         xy = self.cornerCoordinates
-        xmlParser = L2A_XmlParser(self.config, 'T2A')
-
-        hcsName = xmlParser.root.Geometric_Info.Tile_Geocoding.HORIZONTAL_CS_NAME
+        xp = L2A_XmlParser(self.config, 'T2A')
+        tg = xp.getTree('Geometric_Info', 'Tile_Geocoding')
+        hcsName = tg.HORIZONTAL_CS_NAME.text
         zone = hcsName.split()[4]
         zone1 = int(zone[:-1])
         zone2 = zone[-1:].upper()
@@ -1207,7 +1214,7 @@ class L2A_Tables(Borg):
                 imageId = etree.Element('IMAGE_ID_2A')
                 imageId.text = filename
                 Granules.append(imageId)
-
+        '''
         if(self.config.traceLevel == 'DEBUG'):
             if(scOnly == False):
                 b = self.getBand(self.AOT, uint16)
@@ -1219,7 +1226,7 @@ class L2A_Tables(Borg):
                 self.saveArray('S2L2APP_OUT_SNW', b)
                 b = self.getBand(self.CLD, uint8)
                 self.saveArray('S2L2APP_OUT_CLD', b)
-
+        '''
         xp = L2A_XmlParser(self.config, 'UP2A')
         pi = xp.getTree('General_Info', 'L2A_Product_Info')
         gl = objectify.Element('Granule_List')        
@@ -1328,7 +1335,6 @@ class L2A_Tables(Borg):
             return False
 
         filename = self._L2A_Tile_PVI_File
-        tmpfile = '.tmpfile.JPEG'
         acMode = self.acMode
         self.acMode = False
         b = self.getBand(self.B02)
@@ -1344,22 +1350,15 @@ class L2A_Tables(Borg):
         g = Image.fromarray(g)
         r = Image.fromarray(r)
 
-        out = Image.merge('RGB', (r,g,b))
-        out.save(tmpfile, 'JPEG')
-
-        if os.name == 'posix':
-            callstr = 'gdal_translate -of JPEG2000 -ot Byte ' + tmpfile + ' ' + filename + self._DEV0
-        else: # windows
-            callstr = 'geojasper -f ' + tmpfile + ' -F ' + filename + ' -T jp2 > NUL'
-
-        if(subprocess.call(callstr, shell=True) != 0):
-            self.config.tracer.fatal('shell execution error using gdal_translate')
+        try:
+            out = Image.merge('RGB', (r,g,b))
+            out.save(filename, 'PNG')
+            self.config.tracer.debug('Preview Image created')
+            return True
+        except:
+            self.config.tracer.fatal('Preview Image creation failed')
             self.config.exitError()
             return False
-
-        self.config.tracer.debug('Preview Image created')
-        os.remove(tmpfile)
-        return True
 
 
     def scaleImgArray(self, arr):
@@ -1371,10 +1370,11 @@ class L2A_Tables(Borg):
         arrclip = arr.copy()
         min = 0.0
         max = 0.125
+        scale = 255.0
         arr = clip(arrclip, min, max)
-        scale = 255
-        scaledArr = arr * scale + 0.5
-        return scaledArr.astype(uint8)
+        #SIITBX-50: wrong scale was used: 
+        scaledArr = uint8(arr*scale/max)
+        return scaledArr
 
 
     def testDb(self):
@@ -1428,13 +1428,17 @@ class L2A_Tables(Borg):
 
 
     def getBand(self, index, dataType=uint16):
+        bandName = self.getBandNameFromIndex(index)
+        if (bandName == 'SCL') | (bandName == 'CLD') | \
+           (bandName == 'SNW') | (bandName == 'PRV') | (bandName == 'VIS'):
+            dataType = uint8
+        
         # the output is context sensitive
         # it will return TOA_reflectance (0:1) if self.acMode = False (this is the scene classification mode)
         # it will return the unmodified value for all channels > 12, these are all generated products
         # it will return the radiance if self.acMode = True (this is the atmospheric correction mode)
 
         h5file = openFile(self._ImageDataBase, mode='r')
-        bandName = self.getBandNameFromIndex(index)
         node = h5file.getNode('/arrays', bandName)
 
         if (node.dtype != dataType):
