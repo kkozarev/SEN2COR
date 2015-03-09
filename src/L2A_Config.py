@@ -1977,7 +1977,7 @@ class L2A_Config(Borg):
         L2A_UP_ID = L2A_UP_ID.replace('1C_', '2A_')
         # SIITBX-55: alternative output directory for PDGS:
         targetDir = self._targetDirectory
-        if targetDir != 'false':
+        if targetDir != 'default':
             dirname = targetDir
             if(os.path.exists(dirname) == False):
                 os.mkdir(dirname)            
