@@ -1015,7 +1015,7 @@ class L2A_Tables(Borg):
 
                 return False
 
-        hcsCode = xmlParser.root.Geometric_Info.Tile_Geocoding.HORIZONTAL_CS_CODE
+        hcsCode = tg.HORIZONTAL_CS_CODE.text
         t_srs = '-t_srs ' + hcsCode
 
         te = ' -te %f %f %f %f' % (xy[0,0], xy[2,1], xy[2,0], xy[0,1])
