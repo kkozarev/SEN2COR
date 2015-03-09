@@ -1202,7 +1202,9 @@ class L2A_Tables(Borg):
             if os.name == 'posix':
                 callstr = 'gdal_translate -of JPEG2000 -ot' + option2 + tmpfile + ' ' + filename + self._DEV0
             else: # windows
-                callstr = 'geojasper -f ' + tmpfile + ' -F ' + filename + ' -T jp2 > NUL'
+                #callstr = 'geojasper -f ' + tmpfile + ' -F ' + filename + ' -T jp2 > NUL'
+                callstr = 'gdal_translate -of JP2OpenJPEG -ot' + option2 + tmpfile + ' ' + filename + self._DEV0
+                
             if(subprocess.call(callstr, shell=True) != 0):
                 self.config.tracer.fatal('shell execution error using gdal_translate')
                 self.config.exitError()
