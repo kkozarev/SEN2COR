@@ -55,10 +55,13 @@ class L2A_Tables(Borg):
         QI_DATA = '/QI_DATA'
         GRANULE = '/GRANULE/'
 
-        if os.name == 'posix':
-            self._DEV0 = ' > /dev/null'
+        if config.traceLevel == 'DEBUG':
+            self._DEV0 = ''
         else:
-            self._DEV0 = ' > NUL'
+            if os.name == 'posix':
+                self._DEV0 = ' 2>/dev/null'
+            else:
+                self._DEV0 = ' 2>NUL'
 
         # Resolution:
         self._resolution = int(self.config.resolution)
@@ -1173,19 +1176,14 @@ class L2A_Tables(Borg):
             bandName = self.getBandNameFromIndex(index)
             filename = self._L2A_Tile_BND_File
             tmpfile = os.path.basename(tmpfile)
-            option2 = ' UInt16 '   
             filename = filename.replace('BXX', bandName)
             if (bandName == 'VIS'):
                 filename = self._L2A_Tile_VIS_File                
-                option2 = ' Byte '
             elif (bandName == 'SNW') :
                 filename = self._L2A_Tile_SNW_File
-                option2 = ' Byte '
             elif(bandName == 'CLD'):
                 filename = self._L2A_Tile_CLD_File
-                option2 = ' Byte '
             elif(bandName == 'SCL'):
-                option2 = ' Byte '
                 filename = self._L2A_Tile_SCL_File
             elif(bandName == 'AOT'):
                 filename = self._L2A_Tile_AOT_File
@@ -1198,15 +1196,9 @@ class L2A_Tables(Borg):
                     continue
 
             self.H5ToJ2k_step2(index)
-
-            if os.name == 'posix':
-                callstr = 'gdal_translate -of JPEG2000 -ot' + option2 + tmpfile + ' ' + filename + self._DEV0
-            else: # windows
-                #callstr = 'geojasper -f ' + tmpfile + ' -F ' + filename + ' -T jp2 > NUL'
-                callstr = 'gdal_translate -of JP2OpenJPEG -ot' + option2 + tmpfile + ' ' + filename + self._DEV0
-                
+            callstr = 'opj_compress -i ' + tmpfile + ' -o ' + filename + self._DEV0
             if(subprocess.call(callstr, shell=True) != 0):
-                self.config.tracer.fatal('shell execution error using gdal_translate')
+                self.config.tracer.fatal('shell execution error using opj_compress')
                 self.config.exitError()
                 return False
 
@@ -1216,19 +1208,7 @@ class L2A_Tables(Borg):
                 imageId = etree.Element('IMAGE_ID_2A')
                 imageId.text = filename
                 Granules.append(imageId)
-        '''
-        if(self.config.traceLevel == 'DEBUG'):
-            if(scOnly == False):
-                b = self.getBand(self.AOT, uint16)
-                self.saveArray('S2L2APP_OUT_AOT', b)
-            if(self.config.resolution > 10):
-                b = self.getBand(self.SCL, uint8)
-                self.saveArray('S2L2APP_OUT_SCL', b)
-                b = self.getBand(self.SNW, uint8)
-                self.saveArray('S2L2APP_OUT_SNW', b)
-                b = self.getBand(self.CLD, uint8)
-                self.saveArray('S2L2APP_OUT_CLD', b)
-        '''
+
         xp = L2A_XmlParser(self.config, 'UP2A')
         pi = xp.getTree('General_Info', 'L2A_Product_Info')
         gl = objectify.Element('Granule_List')        

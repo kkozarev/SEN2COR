@@ -3,8 +3,8 @@
     <Common_Section>
         <Trace_Level>INFO</Trace_Level> <!-- can be: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL -->
         <DN_Scale>4000.0</DN_Scale>
-        <Target_Directory>default</Target_Directory> <!-- should be either a directory or 'default'. If default, target will be created at root of L1C product -->
-        <DEM_Directory>false</DEM_Directory> <!-- should be either a directory under S2L2APPHOME or 'false'. If false, no DEM will be used -->
+        <Target_Directory>DEFAULT</Target_Directory> <!-- should be either a directory or 'DEFAULT'. If default, target will be created at root of L1C product -->
+        <DEM_Directory>dem/srtm</DEM_Directory> <!-- should be either a directory under S2L2APPHOME or 'NONE'. If NONE, no DEM will be used -->
         <DEM_Reference>http://data_public:GDdci@data.cgiar-csi.org/srtm/tiles/GeoTIFF/</DEM_Reference> <!-- will be ignored if DEM is false. Either a DEM will be downloaded from this reference, if no local DEM is available -->
 		<UP_Scheme_1C>S2_User_Product_Level-1C_Metadata.xsd</UP_Scheme_1C>
 		<UP_Scheme_2A>S2_User_Product_Level-2A_Metadata.xsd</UP_Scheme_2A>

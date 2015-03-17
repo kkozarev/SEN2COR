@@ -10,7 +10,7 @@ Atmoshperic corrected (Level 2A) data. It additionally performs a Scene \
 Classification of the corresponding input. For details, read the Software \
 User Manual which is attached to this python module.\
 \
-This Software contains an IPR of DyLR. Thus is is not Open Source and the \
+This Software contains an IPR of DLR. Thus is is not Open Source and the \
 module for the Atmospheric Correction is attached to this software in form \
 of a binary library only.',
 
