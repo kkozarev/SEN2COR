@@ -46,7 +46,7 @@ class L2A_Tables(Borg):
         self.config = config
         L1C_UP_MASK = '*1C_*'
         if(fnmatch.fnmatch(config.workDir, L1C_UP_MASK) == False):
-            self.config.tracer.fatal('identifier "*1C_*" is missing for the Level-1C_User_Product')
+            self.config.logger.fatal('identifier "*1C_*" is missing for the Level-1C_User_Product')
             self.config.exitError()
             return False
 
@@ -949,8 +949,8 @@ class L2A_Tables(Borg):
         import zipfile
 
         demDir = self.config.getStr('Common_Section', 'DEM_Directory')
-        if demDir == 'false':
-            self.config.logger.info('DEM dir does not exist, flat surface is used')
+        if demDir == 'NONE':
+            self.config.logger.info('DEM directory not specified, flat surface is used')
             return False
 
         self.config.logger.info('Start DEM alignment for tile')
@@ -1194,7 +1194,7 @@ class L2A_Tables(Borg):
             elif(bandName == 'DEM'):
                 filename = self._L2A_Tile_DEM_File
                 demDir = self.config.getStr('Common_Section', 'DEM_Directory')
-                if demDir == 'false':
+                if demDir == 'NONE':
                     continue
 
             self.H5ToJ2k_step2(index)

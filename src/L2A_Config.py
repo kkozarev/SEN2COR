@@ -2047,9 +2047,9 @@ class L2A_Config(Borg):
             upScheme2a = cs.UP_Scheme_2A.text
             tileScheme2a = cs.Tile_Scheme_2A.text
             dsScheme2a = cs.DS_Scheme_2A.text
-            copy_file(self.get_config_dir() + upScheme2a, L2A_UP_DIR + REP_INFO + '/' + upScheme2a)
-            copy_file(self.get_config_dir() + tileScheme2a, L2A_UP_DIR + REP_INFO + '/' + tileScheme2a)
-            copy_file(self.get_config_dir() + dsScheme2a, L2A_UP_DIR + REP_INFO + '/' + dsScheme2a)
+            copy_file(self.configDir + upScheme2a, L2A_UP_DIR + REP_INFO + '/' + upScheme2a)
+            copy_file(self.configDir + tileScheme2a, L2A_UP_DIR + REP_INFO + '/' + tileScheme2a)
+            copy_file(self.configDir + dsScheme2a, L2A_UP_DIR + REP_INFO + '/' + dsScheme2a)
             # copy L2A User Product metadata file:
             copy_file(fn_L1C, fn_L2A)
             # remove old L1C entries from L1C_UP_MTD_XML:
