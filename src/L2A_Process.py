@@ -85,6 +85,7 @@ class L2A_Process(object):
             self.config.resolution = 10
             self.config.readPreferences()
             self.tables = L2A_Tables(self.config, tile)
+            self.config.readTileMetadata()
             self._processed10 = self.process()
             if(self._processed10 == False):
                 return False
@@ -102,6 +103,7 @@ class L2A_Process(object):
             self.config.resolution = 20
             self.config.readPreferences()
             self.tables = L2A_Tables(self.config, tile)
+            self.config.readTileMetadata()
             self._processed20 = self.process()
             if(self._processed20 == False):
                 return False
@@ -172,7 +174,7 @@ class L2A_Process(object):
         xp.export()
         xp.validate()
 
-        if(self.tables.J2kToH5() == False):
+        if(self.tables.importBandList() == False):
             return False   
         return True
 
@@ -181,7 +183,7 @@ class L2A_Process(object):
         self.config.tracer.info('Post-processing with resolution %d m', self.config.resolution)
         self.config.logger.info('Post-processing with resolution %d m', self.config.resolution)
         
-        res = self.tables.H5ToJ2k(self.scOnly)
+        res = self.tables.exportBandList()
         if(self.config.resolution == 60):
             self.config.postprocess()
 

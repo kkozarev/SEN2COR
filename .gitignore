@@ -11,3 +11,5 @@ src/L2A_AtmCorr.*
 .spyderproject
 .DS_Store
 .settings
+
+src/L2A_Tables_old.py
