@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Level-2A_Ground_Image_Processing_Parameter>
     <Common_Section>
-        <Trace_Level>DEBUG</Trace_Level> <!-- can be: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL -->
+        <Trace_Level>INFO</Trace_Level> <!-- can be: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL -->
         <DN_Scale>4000.0</DN_Scale>
         <Target_Directory>DEFAULT</Target_Directory> <!-- should be either a directory or 'DEFAULT'. If default, target will be created at root of L1C product -->
         <DEM_Directory>NONE</DEM_Directory> <!-- should be either a directory under S2L2APPHOME or 'NONE'. If NONE, no DEM will be used -->

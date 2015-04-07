@@ -4,6 +4,7 @@ Created on Feb 24, 2012
 @author: umuellerwilm
 '''
 import fnmatch
+import warnings
 import subprocess
 import sys, os
 import glob
@@ -16,7 +17,6 @@ from tables.description import *
 from distutils.dir_util import copy_tree, mkpath
 from distutils.file_util import copy_file
 from scipy.ndimage.interpolation import zoom
-from scipy.misc import imresize
 from L2A_Config import L2A_Config
 from L2A_Library import rectBivariateSpline, stdoutWrite, showImage
 from lxml import etree, objectify
@@ -62,9 +62,9 @@ class L2A_Tables(Borg):
             self._DEV0 = ''
         else:
             if os.name == 'posix':
-                self._DEV0 = ' 2>/dev/null'
+                self._DEV0 = ' &>/dev/null'
             else:
-                self._DEV0 = ' 2>NUL'
+                self._DEV0 = ' &>NUL'
 
         # Resolution:
         self._resolution = int(self.config.resolution)
@@ -830,10 +830,9 @@ class L2A_Tables(Borg):
             for i in channels:
                 for filename in dirs:
                     bandName = self.getBandNameFromIndex(i)
-                    if (bandName == 'VIS') or (bandName == 'SCL') or bandName == 'AOT':
-                        filemask = '*_' + bandName + '_L2A_*' + srcResolution + '.jp2'                    
-                    else:
-                        filemask = '*_L2A_*_' + bandName + srcResolution + '.jp2'
+                    if (bandName == 'VIS') or (bandName == 'SCL') or \
+                       (bandName == 'AOT') or (bandName == 'WVP'):
+                        filemask = '*_' + bandName + '_L2A_*' + srcResolution + '.jp2'
                     if fnmatch.fnmatch(filename, filemask) == False:
                         continue
                     self.importBand(i, filename)
@@ -892,7 +891,7 @@ class L2A_Tables(Borg):
         utm_coordinate_system.SetWellKnownGeogCS("WGS84") # Set geographic coordinate system to handle lat/lon
         zone = zone1
         hemi = zone2
-        # SIITBX-48
+        # SIITBX-48:
         if(hemi == 'N'): # N is Northern Hemisphere
             utm_coordinate_system.SetUTM(zone, 1)
         else:
@@ -1053,47 +1052,56 @@ class L2A_Tables(Borg):
 
     def importBand(self, index, filename=None):
         bandName = self.getBandNameFromIndex(index)
-        indataset = glymur.Jp2k(filename)
-        # now the resamling:
-        src_nrows = indataset.shape[0]
-        src_ncols = indataset.shape[1]
-        tgt_nrows = self.config.nrows
-        tgt_ncols = self.config.ncols
-        if src_nrows == tgt_nrows:
-            # no resamling required:
-            indataArr = indataset[:]
-        elif src_nrows > tgt_nrows:
-            # downsampling is required:
-            # first step, take first lower resolution slice.
-            indataArr = indataset[::2,::2]
-            # for target r20 no further resampling necessary:
-            if self._resolution == 60:
-                zoomX = float64(tgt_ncols)/(float64(src_ncols)*0.5)
-                zoomY = float64(tgt_nrows)/(float64(src_nrows)*0.5)
-                indataArr = zoom(indataArr, ([zoomX,zoomY]), order=0)
-        elif tgt_nrows > src_nrows:
-            # upsampling is required:
-            indataArr = indataset[:]
-            zoomX = float64(tgt_ncols)/float64(src_ncols)
-            zoomY = float64(tgt_nrows)/float64(src_nrows)
-            indataArr = zoom(indataArr, ([zoomX,zoomY]), order=1)
-        # next section to correct small resampling errors in TPZF testdata:
-        src_nrows = indataArr.shape[0]
-        src_ncols = indataArr.shape[1]     
-        if src_nrows < tgt_nrows:
-            nrows = tgt_nrows - src_nrows
-            a = zeros((nrows, src_ncols), dtype=uint16)
-            indataArr = append(indataArr,a,axis=0) 
-        elif src_nrows > tgt_nrows:
-            nrows = src_nrows - tgt_nrows
-            indataArr = indataArr[:-nrows,:]
-        if src_ncols < tgt_ncols:
-            ncols = tgt_ncols - src_ncols
-            a = zeros((tgt_nrows, ncols), dtype=uint16)
-            indataArr = append(indataArr,a,axis=1)
-        elif src_ncols > tgt_ncols:
-            ncols = src_ncols - tgt_ncols
-            indataArr = indataArr[:,:-ncols]
+        if filename == None: # input via GDAL (GeoTiff data, DEM):
+            tmpfile = self._TmpFile            
+            indataArr = gdal.Open(tmpfile, GA_ReadOnly)
+            tgt_nrows = indataArr.RasterYSize
+            tgt_ncols = indataArr.RasterXSize        
+        else: # the new input for JP2 data:
+            indataset = glymur.Jp2k(filename)
+            # now the resamling:
+            # to suppress the rounding error for TPZF testdata:
+            warnings.filterwarnings("ignore")
+            src_nrows = indataset.shape[0]
+            src_ncols = indataset.shape[1]
+            tgt_nrows = self.config.nrows
+            tgt_ncols = self.config.ncols
+            if src_nrows == tgt_nrows:
+                # no resamling required:
+                indataArr = indataset[:]
+            elif src_nrows > tgt_nrows:
+                # downsampling is required:
+                # first step, take first lower resolution slice.
+                indataArr = indataset[::2,::2]
+                # for target r20 no further resampling necessary:
+                if self._resolution == 60:
+                    zoomX = float64(tgt_ncols)/(float64(src_ncols)*0.5)
+                    zoomY = float64(tgt_nrows)/(float64(src_nrows)*0.5)
+                    indataArr = zoom(indataArr, ([zoomX,zoomY]), order=0)
+            elif tgt_nrows > src_nrows:
+                # upsampling is required:
+                indataArr = indataset[:]
+                zoomX = float64(tgt_ncols)/float64(src_ncols)
+                zoomY = float64(tgt_nrows)/float64(src_nrows)
+                indataArr = zoom(indataArr, ([zoomX,zoomY]), order=3)
+            # next section to correct small resampling errors in TPZF testdata:
+            src_nrows = indataArr.shape[0]
+            src_ncols = indataArr.shape[1]     
+            if src_nrows < tgt_nrows:
+                nrows = tgt_nrows - src_nrows
+                a = zeros((nrows, src_ncols), dtype=uint16)
+                indataArr = append(indataArr,a,axis=0) 
+            elif src_nrows > tgt_nrows:
+                nrows = src_nrows - tgt_nrows
+                indataArr = indataArr[:-nrows,:]
+            if src_ncols < tgt_ncols:
+                ncols = tgt_ncols - src_ncols
+                a = zeros((tgt_nrows, ncols), dtype=uint16)
+                indataArr = append(indataArr,a,axis=1)
+            elif src_ncols > tgt_ncols:
+                ncols = src_ncols - tgt_ncols
+                indataArr = indataArr[:,:-ncols]
+            indataset = None
         
         h5file = openFile(self._ImageDataBase, mode='a', title =  str(self._resolution) + 'm bands')
         if(h5file.__contains__('/tmp') == False):
@@ -1114,25 +1122,34 @@ class L2A_Tables(Borg):
         if(h5file.__contains__('/arrays/' + bandName)):
             self.config.tracer.error( bandName + ' already exists in database ' + self._ImageDataBase)
             h5file.close()
-            indataset = None
+            indataArr = None
             return
-        else: 
-            dtOut = self.setDataType(indataArr.dtype)
+        else:
             filters = Filters(complib="zlib", complevel=1)
-            eArray = h5file.createEArray(garrays, bandName, dtOut, (0, indataArr.shape[1]), bandName, filters=filters)
-            eArray.append(indataArr)
+            if filename == None:
+                inband = indataArr.GetRasterBand(1)
+                dtOut = self.setDataType(inband.DataType)
+                eArray = h5file.createEArray(garrays, bandName, dtOut, (0, tgt_ncols), bandName, filters=filters)
+                for i in range(inband.YSize):
+                    scanline = inband.ReadAsArray(0, i, inband.XSize, 1, inband.XSize, 1)
+                    scanline = choose( equal( scanline, None), (scanline, None) )
+                    eArray.append(scanline)
+            else:
+                dtOut = self.setDataType(indataArr.dtype)
+                eArray = h5file.createEArray(garrays, bandName, dtOut, (0, tgt_ncols), bandName, filters=filters)
+                eArray.append(indataArr)
 
         particle = table.row
         particle['bandName'] = bandName
         #particle['geoTransformation'] = self._geoTransformation
         #particle['projectionRef'] = projectionRef
-        particle['rasterYSize'] = indataArr.shape[0]
-        particle['rasterXSize'] = indataArr.shape[1]
+        particle['rasterYSize'] = tgt_nrows
+        particle['rasterXSize'] = tgt_ncols
         particle['rasterCount'] = 1
         particle.append()
         table.flush()
         h5file.close()
-        indataset = None
+        indataArr = None
         self.config.tracer.info(bandName + ' imported')
         self.config.timestamp('L2A_Tables: band ' + bandName + ' imported')
         return
@@ -1145,7 +1162,6 @@ class L2A_Tables(Borg):
             return False
 
         os.chdir(workDir)
-        tmpfile = self._TmpFile
         database = self._ImageDataBase
 
         self.config.timestamp('L2A_Tables: start export')
@@ -1163,11 +1179,10 @@ class L2A_Tables(Borg):
         Granules.attrib['granuleIdentifier'] = self.config.L2A_TILE_ID
         Granules.attrib['datastripIdentifier'] = self.config.L2A_DS_ID
         Granules.attrib['imageFormat'] = 'JPEG2000'
- 
+        h5file = openFile(self._ImageDataBase, mode='r')
         for index in bandIndex:
             bandName = self.getBandNameFromIndex(index)
             filename = self._L2A_Tile_BND_File
-            tmpfile = os.path.basename(tmpfile)
             filename = filename.replace('BXX', bandName)
             if (bandName == 'VIS'):
                 filename = self._L2A_Tile_VIS_File                
@@ -1187,10 +1202,10 @@ class L2A_Tables(Borg):
                 if demDir == 'NONE':
                     continue
 
-            band = self.getBand(index)
-            if index < 13: # these bands have reflectance values (0:1)
-                band = band * self.config.dnScale + 0.5
-            glymur.Jp2k(filename, band.astype(uint16))
+            node = h5file.getNode('/arrays', bandName)
+            band = node.read()
+            kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
+            glymur.Jp2k(filename, band.astype(uint16), **kwargs)            
             self.config.tracer.info('Band ' + bandName + ' exported')
             self.config.timestamp('L2A_Tables: band ' + bandName + ' exported')
             filename = os.path.basename(filename.strip('.jp2'))
@@ -1198,16 +1213,48 @@ class L2A_Tables(Borg):
                 imageId = etree.Element('IMAGE_ID_2A')
                 imageId.text = filename
                 Granules.append(imageId)
-
+        
+        h5file.close()
+        # update on UP level:
         xp = L2A_XmlParser(self.config, 'UP2A')
-        pi = xp.getTree('General_Info', 'L2A_Product_Info')
-        gl = objectify.Element('Granule_List')        
+        if(self._resolution == 60):
+            # SIITBX-64: remove unsupported bands 8 and 10:
+            pi = xp.getTree('General_Info', 'L2A_Product_Info')
+            bl = pi.Query_Options.Band_List.BAND_NAME
+            for i in range(len(bl)):
+                if bl[i].text == 'B8':
+                    del bl[i]
+                    continue
+                if bl[i].text == 'B10':
+                    del bl[i]
+                    break
+
+        pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')
+        # SIITBX-62: set to current resolution:
+        si = pic.Spectral_Information_List.Spectral_Information
+        if self._resolution == 60:
+            for i in range(len(si)):        
+                si[i].RESOLUTION = 60
+        elif self._resolution == 20:
+            for i in [1,2,3,4,5,6,8,11,12]:        
+                si[i].RESOLUTION = 20           
+        elif self._resolution == 10:
+            for i in [1,2,3,7]:
+                si[i].RESOLUTION = 10
+            # SIITBX-64: add info for Band 8:        
+            pi = xp.getTree('General_Info', 'L2A_Product_Info')
+            bn = etree.Element('BAND_NAME')            
+            bn.text = 'B8'
+            bl = pi.Query_Options.Band_List
+            bl.insert(7,bn)
+            
+        gl = objectify.Element('Granule_List')     
         gl.append(Granules)
         po = pi.L2A_Product_Organisation
         po.append(gl)
         xp.export()
 
-        # update on tile level
+        # update on tile level:
         if(self._resolution == 60):
             xp = L2A_XmlParser(self.config, 'T2A')
             gi = xp.getRoot('General_Info')
@@ -1356,10 +1403,6 @@ class L2A_Tables(Borg):
 
     def getBand(self, index, dataType=uint16):
         bandName = self.getBandNameFromIndex(index)
-        #if (bandName == 'SCL') | (bandName == 'CLD') | \
-        #   (bandName == 'SNW') | (bandName == 'PRV') | (bandName == 'VIS'):
-        #    dataType = uint8
-        
         # the output is context sensitive
         # it will return TOA_reflectance (0:1) if self.acMode = False (this is the scene classification mode)
         # it will return the unmodified value for all channels > 12, these are all generated products
@@ -1367,12 +1410,6 @@ class L2A_Tables(Borg):
 
         h5file = openFile(self._ImageDataBase, mode='r')
         node = h5file.getNode('/arrays', bandName)
-        '''
-        if (node.dtype != dataType):
-            self.config.tracer.fatal('Wrong data type, must be: ' + str(node.dtype))
-            h5file.close()
-            self.config.exitError()
-        '''
         nrows, ncols, count = self.getBandSize(index)
         if (count < 1):
             self.config.tracer.fatal('Insufficient band size: ' + count)
