@@ -150,7 +150,7 @@ class L2A_Process(object):
             return False
 
         return True
-
+        
 
     def preprocess(self):
         self.config.tracer.info('Pre-processing with resolution %d m', self.config.resolution)
@@ -204,16 +204,32 @@ class L2A_Process(object):
         return
 
 
-def main(args, config):
+def main(args=None):
+    import argparse
+    config = L2A_Config()
+    descr = config.processorName +'. Version: '+ config.processorVersion + ', created: '+ config.processorDate + \
+    ', supporting Level-1C product version: ' + config.productVersion + '.'
+     
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument('directory', help='Directory where the Level-1C input files are located')
+    parser.add_argument('--resolution', type=int, choices=[10, 20, 60], help='Target resolution, must be 10, 20 or 60 [m]')
+    parser.add_argument('--sc_only', action='store_true', help='Performs only the scene classification at 60m resolution')
+    parser.add_argument('--profile', action='store_true', help='Profiles the processor\'s performance')
+    args = parser.parse_args()
 
-    if os.path.exists(args.directory) == False:
-        stderrWrite('directory "%s" does not exist\n.' % args.directory)
-        return False
     # SIITBX-49: directory should not end with '/':
     directory = args.directory
     if directory[-1] == '/':
         directory = directory[:-1]
-        
+
+    # check if directory argument starts with a relative path. If not, expand: 
+    if(os.path.isabs(directory)) == False:
+        cwd = os.getcwd()
+        directory = os.path.join(cwd, directory)
+    elif os.path.exists(args.directory) == False:
+        stderrWrite('directory "%s" does not exist\n.' % args.directory)
+        return False
+    
     processor = L2A_Process(directory)
     processor.scOnly = args.sc_only
 
@@ -244,7 +260,23 @@ def main(args, config):
         config.setTimeEstimation(resolution)
         config.logger.debug('Module L2A_Process initialized')
 
-        result = processor.selectAndProcess(tile)
+        if(args.profile == True):
+            import cProfile, pstats, StringIO
+            pr = cProfile.Profile()
+            pr.enable()
+            result = processor.selectAndProcess(tile)
+            pr.disable()
+            s = StringIO.StringIO()
+            sortby = 'cumulative'
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby).print_stats(.25, 'L2A_')
+            ps.print_stats()
+            profile = s.getvalue()            
+            s.close()
+            with open(os.environ['SEN2COR_HOME'] + '/log/profile', 'w') as textFile:
+                textFile.write(profile)
+                textFile.close()
+        else:
+            result = processor.selectAndProcess(tile)
         if(result == False):
             stderrWrite('Application terminated with errors, see log file and traces.\n')
             return False
@@ -255,29 +287,5 @@ def main(args, config):
     stdoutWrite('\nApplication terminated successfully.\n')
     return True
 
-
 if __name__ == "__main__":
-    # Someone is launching this directly
-    import argparse
-    config = L2A_Config()
-    descr = config.processorName +'. Version: '+ config.processorVersion + ', created: '+ config.processorDate + \
-    ', supporting Level-1C product version: ' + config.productVersion + '.'
-     
-    parser = argparse.ArgumentParser(description=descr)
-    parser.add_argument('directory', help='Directory where the Level-1C input files are located')
-    parser.add_argument('--resolution', type=int, choices=[10, 20, 60], help='Target resolution, must be 10, 20 or 60 [m]')
-    parser.add_argument('--sc_only', action='store_true', help='Performs only the scene classification at 60m resolution')
-    parser.add_argument('--profile', action='store_true', help='Performs a processor performance profile and displays the results')
-    args = parser.parse_args()
-
-    if(args.profile == True):
-        import cProfile
-        import pstats
-        logdir = os.environ['S2L2APPHOME'] + '/log'
-        profile = logdir + '/profile'
-        cProfile.run('main(args, config)', profile)
-        p = pstats.Stats(profile)
-        p.strip_dirs().sort_stats('cumulative').print_stats(.25, 'L2A_')
-    else:
-        main(args, config)
-        
+    sys.exit(main() or 0)

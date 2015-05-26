@@ -8,7 +8,10 @@ import warnings
 import subprocess
 import sys, os
 import glob
-import Image
+try:
+    import Image
+except:
+    from PIL import Image
 import glymur
 
 from tables import *
@@ -18,7 +21,7 @@ from distutils.dir_util import copy_tree, mkpath
 from distutils.file_util import copy_file
 from scipy.ndimage.interpolation import zoom
 from L2A_Config import L2A_Config
-from L2A_Library import rectBivariateSpline, stdoutWrite, showImage
+from L2A_Library import rectBivariateSpline, stdoutWrite, showImage, stderrWrite
 from lxml import etree, objectify
 from L2A_XmlParser import L2A_XmlParser
 from L2A_Borg import Borg
@@ -64,26 +67,19 @@ class L2A_Tables(Borg):
             if os.name == 'posix':
                 self._DEV0 = ' &>/dev/null'
             else:
-                self._DEV0 = ' &>NUL'
-
+                self._DEV0 = ' > nul 2>&1'
         # Resolution:
         self._resolution = int(self.config.resolution)
         if(self._resolution == 10):
             self._bandIndex = [1,2,3,7]
-            #self._ownChannelIndex = [1,2,3,7]
-            #self._resChannelIndex = None
             self._nBands = 4
             bandDir = '/R10m'
         elif(self._resolution == 20):
             self._bandIndex = [0,1,2,3,4,5,6,8,9,10,11,12]
-            #self._ownChannelIndex = [4,5,6,8,11,12]
-            #self._resChannelIndex = [0,1,2,3,9,10]
             self._nBands = 9
             bandDir = '/R20m'
         elif(self._resolution == 60):
             self._bandIndex = [0,1,2,3,4,5,6,8,9,10,11,12]
-            #self._ownChannelIndex = [0,9,10]
-            #self._resChannelIndex = [1,2,3,4,5,6,8,11,12]
             self._nBands = 11
             bandDir = '/R60m'
 
@@ -123,17 +119,30 @@ class L2A_Tables(Borg):
         self.config.L2A_TILE_MTD_XML = L2A_TILE_MTD_XML        
 
         if(self._resolution == 60):
+            xp = L2A_XmlParser(self.config, 'T1C')
+            if(xp.validate()) == False:
+                tg = xp.getTree('Geometric_Info', 'Tile_Geocoding')                
+                if tg.attrib['metadataLevel'] == 'Brief':
+                    stderrWrite('\nFile: ' + self.config.L1C_TILE_MTD_XML + '\n')
+                    stderrWrite('Section: <Geometric_Info><Tile_Geocoding>\n')
+                    stderrWrite('This version of Sen2Cor does not support the "Brief" metadata level.\n')
+                    stderrWrite('please donwnload a product which has at least the "Standard" metadata level.\n')
+                self.config.exitError()
+
             copy_file(L1C_TILE_MTD_XML, L2A_TILE_MTD_XML)
             xp = L2A_XmlParser(self.config, 'T2A')
             if(xp.convert() == False):
                 self.tracer.fatal('error in converting tile metadata to level 2A')
-                self.exitError()
+                self.config.exitError()
             
             #update tile id in ds metadata file.
             xp = L2A_XmlParser(self.config, 'DS2A')
             ti = xp.getTree('Image_Data_Info', 'Tiles_Information')
             Tile = objectify.Element('Tile', tileId = self.config.L2A_TILE_ID)
-            ti.Tile_List.append(Tile)
+            try:
+                ti.Tile_List.append(Tile)
+            except:
+                self.config.logger.warning('No Tile_List in datastrip metadata available')
             xp.export()
 
         L1C_ImgDataDir = L1C_TILE_ID + IMG_DATA
@@ -176,7 +185,7 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.png'
+        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -228,8 +237,6 @@ class L2A_Tables(Borg):
         self._ELE = 29
 
         self.config.tracer.debug('Module L2A_Tables initialized with resolution %d' % self._resolution)
-
-        return
 
 
     def get_ac_mode(self):
@@ -880,11 +887,13 @@ class L2A_Tables(Borg):
     def get_utm_zone(self, longitude):
         return (int(1+(longitude+180.0)/6.0))
 
+
     def is_northern(self, latitude): # Determines if given latitude is a northern for UTM
             if (latitude < 0.0):
                 return 0
             else:
                 return 1
+
 
     def transform_utm_to_wgs84(self, easting, northing, zone1, zone2):
         utm_coordinate_system = osr.SpatialReference()
@@ -980,7 +989,6 @@ class L2A_Tables(Borg):
             if(subprocess.call(callstr, shell=True) != 0):
                 self.config.tracer.fatal('shell execution error using gdalwarp')
                 self.config.exitError()
-
                 return False
 
         hcsCode = tg.HORIZONTAL_CS_CODE.text
@@ -1166,14 +1174,20 @@ class L2A_Tables(Borg):
 
         self.config.timestamp('L2A_Tables: start export')
         if(self._resolution == 10):
-            bandIndex = [1,2,3,7,13,17,18]
-
+            if(self.acMode == True):
+                bandIndex = [1,2,3,7,13,17,18]
+            else:
+                bandIndex = [1,2,3,7,13]
         elif(self._resolution == 20):
-            bandIndex = [1,2,3,4,5,6,8,11,12,13,14,15,16,17,18,19]
-
+            if(self.acMode == True):
+                bandIndex = [1,2,3,4,5,6,8,11,12,13,14,15,16,17,18,19]
+            else:
+                bandIndex = [1,2,3,4,5,6,8,11,12,13,14,15,16]
         elif(self._resolution == 60):
-            bandIndex = [0,1,2,3,4,5,6,8,9,11,12,13,14,15,16,17,18,19]
-
+            if(self.acMode == True):
+                bandIndex = [0,1,2,3,4,5,6,8,9,11,12,13,14,15,16,17,18,19]
+            else:
+                bandIndex = [1,2,3,4,5,6,8,11,12,13,14,15,16]
         #prepare the xml export
         Granules = objectify.Element('Granules')
         Granules.attrib['granuleIdentifier'] = self.config.L2A_TILE_ID
@@ -1217,10 +1231,10 @@ class L2A_Tables(Borg):
         h5file.close()
         # update on UP level:
         xp = L2A_XmlParser(self.config, 'UP2A')
+        pi = xp.getTree('General_Info', 'L2A_Product_Info')
+        bl = pi.Query_Options.Band_List.BAND_NAME
         if(self._resolution == 60):
             # SIITBX-64: remove unsupported bands 8 and 10:
-            pi = xp.getTree('General_Info', 'L2A_Product_Info')
-            bl = pi.Query_Options.Band_List.BAND_NAME
             for i in range(len(bl)):
                 if bl[i].text == 'B8':
                     del bl[i]
@@ -1231,23 +1245,24 @@ class L2A_Tables(Borg):
 
         pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')
         # SIITBX-62: set to current resolution:
-        si = pic.Spectral_Information_List.Spectral_Information
-        if self._resolution == 60:
-            for i in range(len(si)):        
-                si[i].RESOLUTION = 60
-        elif self._resolution == 20:
-            for i in [1,2,3,4,5,6,8,11,12]:        
-                si[i].RESOLUTION = 20           
-        elif self._resolution == 10:
-            for i in [1,2,3,7]:
-                si[i].RESOLUTION = 10
-            # SIITBX-64: add info for Band 8:        
-            pi = xp.getTree('General_Info', 'L2A_Product_Info')
-            bn = etree.Element('BAND_NAME')            
-            bn.text = 'B8'
-            bl = pi.Query_Options.Band_List
-            bl.insert(7,bn)
-            
+        try:
+            si = pic.Spectral_Information_List.Spectral_Information
+            if self._resolution == 60:
+                for i in range(len(si)):        
+                    si[i].RESOLUTION = 60
+            elif self._resolution == 20:
+                for i in [1,2,3,4,5,6,8,11,12]:        
+                    si[i].RESOLUTION = 20           
+            elif self._resolution == 10:
+                for i in [1,2,3,7]:
+                    si[i].RESOLUTION = 10
+                # SIITBX-64: add info for Band 8:  
+                bn = etree.Element('BAND_NAME')            
+                bn.text = 'B8'
+                bl = pi.Query_Options.Band_List
+                bl.insert(7,bn)
+        except:
+            self.config.logger.warning('No Spectral_Information in user metadata available')
         gl = objectify.Element('Granule_List')     
         gl.append(Granules)
         po = pi.L2A_Product_Organisation
@@ -1329,7 +1344,10 @@ class L2A_Tables(Borg):
 
         try:
             out = Image.merge('RGB', (r,g,b))
-            out.save(filename, 'PNG')
+            #out.save(filename, 'PNG')
+            a = array(out)
+            kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
+            glymur.Jp2k(filename, a.astype(uint8), **kwargs)   
             self.config.tracer.debug('Preview Image created')
             return True
         except:

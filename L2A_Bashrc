@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-export S2L2APPHOME=${PWD}
-export S2L2APPCFG=$S2L2APPHOME/cfg
-export PATH=$S2L2APPHOME/bin:$PATH
-export PYTHONPATH=/usr/lib64/python2.6/site-packages/osgeo:$PYTHONPATH
-export GDAL_DATA=/usr/share/gdal

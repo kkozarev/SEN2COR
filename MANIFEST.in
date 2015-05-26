@@ -1,9 +1,12 @@
-include README.pdf
-recursive-include SEN2COR *
-exclude SEN2COR/src/*.pyc SEN2COR/src/*.c SEN2COR/src/*.o
+include README.txt
+include README.md
+include SETUP.pdf
+
+recursive-include sen2cor *
+
+exclude sen2cor/*.pyc sen2cor/*.c sen2cor/*.o
 global-exclude L2A_AtmCorr.py L2A_TestUtils.py .DS_Store .estimation *.bak *.tmp *~
-prune SEN2COR/bin
-prune SEN2COR/log 
-prune SEN2COR/dem
-prune SEN2COR/src/build
-prune SEN2COR/build/temp.*
+prune sen2cor/bin
+prune sen2cor/dem
+prune sen2cor/log
+prune sen2cor/build/temp*

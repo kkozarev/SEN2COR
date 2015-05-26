@@ -10,7 +10,7 @@ from L2A_Library import stdoutWrite, stderrWrite
 from lxml import etree, objectify
 from time import strftime
 from datetime import datetime, date
-from distutils.dir_util import copy_tree
+from distutils.dir_util import mkpath, copy_tree
 from distutils.file_util import copy_file
 from L2A_Borg import Borg
 
@@ -18,22 +18,18 @@ from L2A_Borg import Borg
 class L2A_Config(Borg):
     _shared = {}
     def __init__(self, workDir = False):
-        self._processorName = 'Sentinel-2 Level 2A Prototype Processor (SEN2COR)'
-        self._processorVersion = '2.0.0'
-        self._processorDate = '2014.12.20'
+        self._processorName = 'Sentinel-2 Level 2A Prototype Processor (Sen2Cor)'
+        self._processorVersion = '2.0.3'
+        self._processorDate = '2015.05.15'
         self._productVersion = '12'
 
         if(workDir):
-            self._home = os.environ['S2L2APPHOME'] + '/'
+            self._home = os.environ['SEN2COR_HOME'] + '/'
+            moduleDir = os.environ['SEN2COR_BIN'] + '/'
             self._workDir = workDir
-            if(os.environ['S2L2APPCFG'] == ''):
-                self._configDir = self._home + 'cfg/'
-            else:
-                self._configDir = os.environ['S2L2APPCFG'] + '/'
-            self._binDir = self._home + 'bin/'
-            self._libDir = self._home + 'lib/'
+            self._configDir = moduleDir + 'cfg/'
             self._logDir = self._home + 'log/'
-            self._configFn = self._configDir + 'L2A_GIPP.xml'
+            self._configFn = self._home + 'cfg/L2A_GIPP.xml'
             self._calibrationFn = ''
             self._solarIrradianceFn = ''
             self._atmDataFn = ''
@@ -42,8 +38,8 @@ class L2A_Config(Borg):
             self._tEst60 = 100.0
             self._tEst20 = 500.0
             self._tEst10 = 1500.0
-            self._processingStatusFn = self._logDir + '/' + '.progress'
-            self._processingEstimationFn = self._configDir + '/' + '.estimation'
+            self._processingStatusFn = self._logDir + '.progress'
+            self._processingEstimationFn = self._configDir + '.estimation'
             if os.path.isfile(self._processingEstimationFn) == False:
             # init processing estimation file:
                 config = ConfigParser.RawConfigParser()
@@ -1104,22 +1100,22 @@ class L2A_Config(Borg):
 
 
     def set_data_dir(self, value):
-        self._dataDir = self.home + value + '/'
+        self._dataDir = value + '/'
 
     def set_config_dir(self, value):
-        self._configDir = self.home + value + '/'
+        self._configDir = value + '/'
 
 
     def set_bin_dir(self, value):
-        self._binDir = self.home + value + '/'
+        self._binDir = value + '/'
 
 
     def set_lib_dir(self, value):
-        self._libDir = self.home + value + '/'
+        self._libDir = value + '/'
 
 
     def set_log_dir(self, value):
-        self._logDir = self.home + value + '/'
+        self._logDir = value + '/'
 
 
     def set_config_fn(self, value):
@@ -1898,6 +1894,9 @@ class L2A_Config(Borg):
         logname = 'L2A_' + self.creationDate
         self._tracer = logging.Logger(logname)
         self._logger = logging.Logger(logname)
+        logdir = os.environ['SEN2COR_HOME'] + '/log'
+        if not os.path.exists(logdir):
+            os.mkdir(logdir)
         self._fnTrace = self._logDir + logname + '_trace.xml'
         f = open(self._fnTrace, 'w')
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
@@ -2206,7 +2205,8 @@ class L2A_Config(Borg):
                 self.exitError()
             xp = L2A_XmlParser(self, 'DS2A')
             ti = xp.getTree('Image_Data_Info', 'Tiles_Information')
-            del ti.Tile_List.Tile[:]
+            if(ti != False):
+                del ti.Tile_List.Tile[:]
             xp.export()
                               
         return sorted(os.listdir(L1C_UP_DIR + GRANULE))
@@ -2370,11 +2370,12 @@ class L2A_Config(Borg):
 
         par = node.Lib_Dir
         if par is None: self.parNotFound(par)
+        moduleDir = os.environ['SEN2COR_BIN'] + '/'
         if self._resolution == 10:
-            self.libDir = par.text + '/10'
+            self.libDir = moduleDir + 'lib/10'
         else:
-            self.libDir = par.text + '/20_60'
-
+            self.libDir = moduleDir + 'lib/20_60'
+        
         par = node.Atm_Data_Filename
         if par is None: self.parNotFound(par)
         self.atmDataFn = self.libDir + '/' + par.text
@@ -2458,10 +2459,18 @@ class L2A_Config(Borg):
     def readTileMetadata(self):
         xp = L2A_XmlParser(self, 'T2A')
         ang = xp.getTree('Geometric_Info', 'Tile_Angles')
-        azimuthAnglesList = ang.Sun_Angles_Grid.Azimuth.Values_List.VALUES
-        solaz_arr = xp.getFloatArray(azimuthAnglesList)
-        zenithAnglesList = ang.Sun_Angles_Grid.Zenith.Values_List.VALUES
-        solze_arr = xp.getFloatArray(zenithAnglesList)
+        try:
+            azimuthAnglesList = ang.Sun_Angles_Grid.Azimuth.Values_List.VALUES
+            solaz_arr = xp.getFloatArray(azimuthAnglesList)
+        except:
+            self.logger.warning('No azimuth angular values in tile metadata available, will be set to 0')
+            solaz_arr = 0
+        try:
+            zenithAnglesList = ang.Sun_Angles_Grid.Zenith.Values_List.VALUES
+            solze_arr = xp.getFloatArray(zenithAnglesList)
+        except:
+            self.logger.warning('No zenith angular values in user metadata available, will be set to 0')
+            solze_arr = 0
         # images may be not squared - this is the case for the current testdata used
         # angle arrays have to be adapted, otherwise the bilinear interpolation is misaligned.
         imgSizeList = xp.getTree('Geometric_Info', 'Tile_Geocoding')
@@ -2477,7 +2486,6 @@ class L2A_Config(Borg):
 
         if(nrows == None or ncols == None):
             self.exitError('no image dimension in metadata specified, please correct')
-
         if(nrows < ncols):
             last_row = int(solaz_arr[0].size * float(nrows)/float(ncols) + 0.5)
             saa = solaz_arr[0:last_row,:]
@@ -2499,8 +2507,16 @@ class L2A_Config(Borg):
 
         self.nrows = nrows
         self.ncols = ncols
-        solze = float32(ang.Mean_Sun_Angle.ZENITH_ANGLE.text)
-        solaz = float32(ang.Mean_Sun_Angle.AZIMUTH_ANGLE.text)
+        try:
+            solze = float32(ang.Mean_Sun_Angle.ZENITH_ANGLE.text)
+        except:
+            self.logger.warning('No mean zenith angular values in tile metadata available, will be set to 0')
+            solze = 0
+        try:
+            solaz = float32(ang.Mean_Sun_Angle.AZIMUTH_ANGLE.text)
+        except:
+            self.logger.warning('No nean azimuth angular values in tile metadata available, will be set to 0')
+            solaz = 0
 
         self._solze = absolute(solze)
         if self.solze > 70.0:
@@ -2516,13 +2532,19 @@ class L2A_Config(Borg):
         # ATCOR employs the Lamberts reflectance law and assumes a constant viewing angle per tile (sub-scene)
         # as this is not given, this is a workaround, which have to be improved in a future version
         #
-        viewAnglesList = ang.Mean_Viewing_Incidence_Angle_List.Mean_Viewing_Incidence_Angle
-        arrlen = len(viewAnglesList)
-        vaa = zeros(arrlen, float32)
-        vza = zeros(arrlen, float32)
-        for i in range(arrlen):
-            vaa[i] = float32(viewAnglesList[i].AZIMUTH_ANGLE.text)
-            vza[i] = float32(viewAnglesList[i].ZENITH_ANGLE.text)
+        try:
+            viewAnglesList = ang.Mean_Viewing_Incidence_Angle_List.Mean_Viewing_Incidence_Angle
+            arrlen = len(viewAnglesList)
+            vaa = zeros(arrlen, float32)
+            vza = zeros(arrlen, float32)
+            for i in range(arrlen):
+                vaa[i] = float32(viewAnglesList[i].AZIMUTH_ANGLE.text)
+                vza[i] = float32(viewAnglesList[i].ZENITH_ANGLE.text)
+        except:
+            self.logger.warning('No Mean_Viewing_Incidence_Angle values in tile metadata available, will be set to default values')
+            viewAnglesList = 0
+            vaa = zeros([2,2], float32)
+            vza = zeros([2,2], float32)
 
         _min = vaa.min()
         _max = vaa.max()

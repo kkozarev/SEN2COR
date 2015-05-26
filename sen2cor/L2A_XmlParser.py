@@ -109,20 +109,18 @@ class L2A_XmlParser(Borg):
     
     def validate(self):
         dummy, fn = os.path.split(self._xmlFn)
-        stdoutWrite('Validating metadata %s against scheme ...\n' % fn)       
+        stdoutWrite('Validating metadata file %s against scheme ...\n' % fn)       
         try:
             schema = etree.XMLSchema(file = self._config.configDir + '/' + self._scheme)
             parser = etree.XMLParser(schema = schema)
             objectify.parse(self._xmlFn, parser)
-            stdoutWrite('Metadata is valid.\n')                
+            stdoutWrite('Metadata file is valid.\n')                
             return True
         except etree.XMLSyntaxError, err:
-            stderrWrite('Error in validation:\n')
+            stderrWrite('Metadata file did not pass validation:\n')
             stderrWrite('- Schema file: %s\n' % self._scheme)
-            stderrWrite('- Details: %s\n\n' % str(err))
-            stderrWrite('Application will be forced to terminate,\n')
-            stderrWrite('Please correct the errors and restart.\n')
-            sys.exit(-1)
+            stderrWrite('- Details: %s\n' % str(err))
+            stderrWrite('It is strongly recommended to correct these errors before continuing.\n')
             return False
 
 
@@ -154,12 +152,20 @@ class L2A_XmlParser(Borg):
         objectify.deannotate(self._root, xsi_nil=True, cleanup_namespaces=True)
         outstr = etree.tostring(self._root, pretty_print=True)
         outstr = outstr.replace('-1C', '-2A')
-        outstr = outstr.replace('Product_Info>', 'L2A_Product_Info>')
-        outstr = outstr.replace('Product_Organisation>', 'L2A_Product_Organisation>')
-        outstr = outstr.replace('Product_Image_Characteristics>', 'L2A_Product_Image_Characteristics>')
-        outstr = outstr.replace('Pixel_Level_QI', 'L1C_Pixel_Level_QI')
-        outstr = outstr.replace('TILE_ID>', 'TILE_ID_2A>')
-        outstr = outstr.replace('DATASTRIP_ID>', 'DATASTRIP_ID_2A>')
+        outstr = outstr.replace('<TILE_ID',                        '<TILE_ID_2A')
+        outstr = outstr.replace('<DATASTRIP_ID',                   '<DATASTRIP_ID_2A')
+        outstr = outstr.replace('<Product_Info',                   '<L2A_Product_Info')
+        outstr = outstr.replace('<Product_Organisation',           '<L2A_Product_Organisation')
+        outstr = outstr.replace('<Product_Image_Characteristics',  '<L2A_Product_Image_Characteristics')
+        outstr = outstr.replace('<Pixel_Level_QI',                 '<L1C_Pixel_Level_QI')
+
+        outstr = outstr.replace('</TILE_ID',                       '</TILE_ID_2A')
+        outstr = outstr.replace('</DATASTRIP_ID',                  '</DATASTRIP_ID_2A')
+        outstr = outstr.replace('</Product_Info',                  '</L2A_Product_Info')
+        outstr = outstr.replace('</Product_Organisation',          '</L2A_Product_Organisation')
+        outstr = outstr.replace('</Product_Image_Characteristics', '</L2A_Product_Image_Characteristics')
+        outstr = outstr.replace('</Pixel_Level_QI',                '</L1C_Pixel_Level_QI')
+        
         if self._product == 'T2A':
             outstr = outstr.replace('Image_Content_QI>', 'L1C_Image_Content_QI>')
         if self._product == 'UP2A':

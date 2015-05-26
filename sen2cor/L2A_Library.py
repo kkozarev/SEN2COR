@@ -13,7 +13,10 @@ from matplotlib import pyplot as plt
 
 import time
 import os, sys, fnmatch
-import Image
+try:
+    import Image
+except:
+    from PIL import Image
 
 def stdoutWrite(s):
     sys.stdout.write(s)

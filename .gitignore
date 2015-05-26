@@ -1,9 +1,11 @@
 bin/
-cfg/.estimation
+build/
+dist/
+sen2cor/cfg/.estimation
 dem/
 log/
-src/build/
-src/L2A_AtmCorr.*
+sen2cor/build/
+sen2cor/L2A_AtmCorr.*
 *.o
 .p*
 *.pyc
@@ -11,11 +13,7 @@ src/L2A_AtmCorr.*
 .spyderproject
 .DS_Store
 .settings
-
-src/L2A_Tables_old.py
-
-cfg/[PSD] S2-PDGS-TAS-DI-PSD [12].pdf
-
-cfg/[PSD] S2-PDGS-TAS-DI-PSD [12].pdf
-
+sen2cor/L2A_Tables_old.py
+sen2cor/cfg/[PSD] S2-PDGS-TAS-DI-PSD [12].pdf
+sen2cor/cfg/[PSD] S2-PDGS-TAS-DI-PSD [12].pdf
 *.pdf
