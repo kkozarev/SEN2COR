@@ -188,7 +188,7 @@ if (sys.argv[1] != 'install'):
 
 system = platform.system()
 if system == 'Darwin':
-	cmdstr = 'conda install --yes gdal'
+	cmdstr = 'conda install --yes gdal=1.11.2'
 	prefix = sys.prefix + '/lib/python2.7/site-packages'
 	modulefolder = prefix + '/' + name + '-' + version + '-py2.7.egg/sen2cor'
 	buildfolder = modulefolder + '/build'
@@ -201,7 +201,7 @@ if system == 'Darwin':
 	except:
 		cfghome = os.environ['HOME']
 elif system == 'Linux':
-	cmdstr = 'conda install --yes gdal'
+	cmdstr = 'conda install --yes gdal=1.11.2'
 	prefix = sys.prefix + '/lib/python2.7/site-packages'
 	modulefolder = prefix + '/' + name + '-' + version + '-py2.7.egg/sen2cor'
 	buildfolder = modulefolder + '/build'
@@ -225,9 +225,9 @@ elif system == 'Windows':
 	cfghome =  os.environ['USERPROFILE'] + '\\documents'
 
 os.system(cmdstr)
-os.system('conda install --yes --channel https://conda.binstar.org/osgeo proj4')
-os.system('conda install --yes --channel https://conda.binstar.org/sunpy glymur')
-os.system('conda update pytables')
+os.system('conda install --yes --channel https://conda.binstar.org/s2tbx proj4')
+os.system('conda install --yes --channel https://conda.binstar.org/s2tbx contextlib2')
+os.system('conda install --yes --channel https://conda.binstar.org/s2tbx glymur')
 # better to do this manually, see SUM section uninstall:
 #os.system('conda clean --yes --tarballs --index-cache --packages --source-cache')
 
