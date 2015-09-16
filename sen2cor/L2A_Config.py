@@ -17,16 +17,16 @@ from L2A_Borg import Borg
 
 class L2A_Config(Borg):
     _shared = {}
-    def __init__(self, workDir = False):
+    def __init__(self, sourceDir = False):
         self._processorName = 'Sentinel-2 Level 2A Prototype Processor (Sen2Cor)'
-        self._processorVersion = '2.0.3'
-        self._processorDate = '2015.05.15'
-        self._productVersion = '12'
+        self._processorVersion = '2.0.4'
+        self._processorDate = '2015.06.15'
+        self._productVersion = '13'
 
-        if(workDir):
+        if(sourceDir):
             self._home = os.environ['SEN2COR_HOME'] + '/'
             moduleDir = os.environ['SEN2COR_BIN'] + '/'
-            self._workDir = workDir
+            self._sourceDir = sourceDir
             self._configDir = moduleDir + 'cfg/'
             self._logDir = self._home + 'log/'
             self._configFn = self._home + 'cfg/L2A_GIPP.xml'
@@ -59,10 +59,10 @@ class L2A_Config(Borg):
             self._GIPP = ''
             self._ECMWF = ''
             self._DEM = ''
-            self._L2A_BOA_QUANTIFICATION_VALUE = 2000
+            self._L2A_BOA_QUANTIFICATION_VALUE = None
             self._L2A_WVP_QUANTIFICATION_VALUE = 1000
             self._L2A_AOT_QUANTIFICATION_VALUE = 1000
-            self._dnScale = 4095.0
+            self._dnScale = None
             self._adj_km = 1.0
             self._ch940 = array([8,8,9,9,0,0])
             self._cellsize = 0 # pixelsize (m), cellsize (km)
@@ -782,8 +782,8 @@ class L2A_Config(Borg):
         return self._home
 
 
-    def get_work_dir(self):
-        return self._workDir
+    def get_source_dir(self):
+        return self._sourceDir
 
 
     def get_data_dir(self):
@@ -1095,8 +1095,8 @@ class L2A_Config(Borg):
         self._home = value
 
 
-    def set_work_dir(self, value):
-        self._workDir = value
+    def set_source_dir(self, value):
+        self._sourceDir = value
 
 
     def set_data_dir(self, value):
@@ -1419,8 +1419,8 @@ class L2A_Config(Borg):
         del self._home
 
 
-    def del_work_dir(self):
-        del self._workDir
+    def del_source_dir(self):
+        del self._sourceDir
 
 
     def del_data_dir(self):
@@ -1744,7 +1744,7 @@ class L2A_Config(Borg):
     processorVersion = property(get_processor_version, set_processor_version, del_processor_version, "processorVersion's docstring")
     processorDate = property(get_processor_date, set_processor_date, del_processor_date, "processorDate's docstring")
     home = property(get_home, set_home, del_home, "home's docstring")
-    workDir = property(get_work_dir, set_work_dir, del_work_dir, "workDir's docstring")
+    sourceDir = property(get_source_dir, set_source_dir, del_source_dir, "sourceDir's docstring")
     dataDir = property(get_data_dir, set_data_dir, del_data_dir, "dataDir's docstring")
     configDir = property(get_config_dir, set_config_dir, del_config_dir, "configDir's docstring")
     binDir = property(get_bin_dir, set_bin_dir, del_bin_dir, "binDir's docstring")
@@ -1927,7 +1927,7 @@ class L2A_Config(Borg):
 
     def createL2A_UserProduct(self):        
         L1C_UP_MASK = '*1C_*'
-        L1C_UP_DIR = self.workDir
+        L1C_UP_DIR = self.sourceDir
         if os.path.exists(L1C_UP_DIR) == False:
             stderrWrite('directory "%s" does not exist.\n' % L1C_UP_DIR)
             self.exitError()
@@ -2056,7 +2056,7 @@ class L2A_Config(Borg):
             if(xp.convert() == False):
                 self.tracer.fatal('error in converting user product metadata to level 2A')
                 self.exitError()
-            xp = L2A_XmlParser(self, 'UP2A')
+            xp = L2A_XmlParser(self, 'UP2A')            
             pi = xp.getTree('General_Info', 'L2A_Product_Info')
             del pi.L2A_Product_Organisation.Granule_List[:]            
             # update L2A entries from L1C_UP_MTD_XML:
@@ -2070,11 +2070,12 @@ class L2A_Config(Borg):
             #qo.PREVIEW_IMAGE = True
             #qo.METADATA_LEVEL = 'Standard'
             qo.Aux_List.attrib['productLevel'] = 'Level-2Ap'
-            pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')              
+            pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')        
             L1C_TOA_QUANTIFICATION_VALUE =pic.L1C_L2A_Quantification_Values_List
             qvl = objectify.Element('L1C_L2A_Quantification_Values_List')
             qvl.L1C_TOA_QUANTIFICATION_VALUE = L1C_TOA_QUANTIFICATION_VALUE
-            qvl.L2A_BOA_QUANTIFICATION_VALUE = str(self._L2A_BOA_QUANTIFICATION_VALUE)
+            self._dnScale =  float32(qvl.L1C_TOA_QUANTIFICATION_VALUE.text)            
+            qvl.L2A_BOA_QUANTIFICATION_VALUE = str(self._dnScale)
             qvl.L2A_BOA_QUANTIFICATION_VALUE.attrib['unit'] = 'none'
             qvl.L2A_AOT_QUANTIFICATION_VALUE = str(self._L2A_AOT_QUANTIFICATION_VALUE)
             qvl.L2A_AOT_QUANTIFICATION_VALUE.attrib['unit'] = 'none'
@@ -2354,10 +2355,6 @@ class L2A_Config(Borg):
         par = node.Trace_Level
         if par is None: self.parNotFound(par)
         self.traceLevel = par.text
-
-        par = node.DN_Scale
-        if par is None: self.parNotFound(par)
-        self.dnScale = float32(par.text)
         
         # SIITBX-55: alternative output directory for PDGS:
         par = node.Target_Directory

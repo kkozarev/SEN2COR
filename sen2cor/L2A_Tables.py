@@ -8,10 +8,7 @@ import warnings
 import subprocess
 import sys, os
 import glob
-try:
-    import Image
-except:
-    from PIL import Image
+from PIL import Image
 import glymur
 
 from tables import *
@@ -51,7 +48,7 @@ class L2A_Tables(Borg):
     def __init__(self, config, L1C_TILE_ID):
         self.config = config
         L1C_UP_MASK = '*1C_*'
-        if(fnmatch.fnmatch(config.workDir, L1C_UP_MASK) == False):
+        if(fnmatch.fnmatch(config.sourceDir, L1C_UP_MASK) == False):
             self.config.logger.fatal('identifier "*1C_*" is missing for the Level-1C_User_Product')
             self.config.exitError()
             return False
@@ -91,7 +88,7 @@ class L2A_Tables(Borg):
         L2A_TILE_ID = L2A_TILE_ID.replace('L1C_', 'L2A_')
         self.config.L2A_TILE_ID = L2A_TILE_ID
         L2A_TILE_ID_SHORT = '/' + L2A_TILE_ID[:55]
-        L1C_TILE_ID = config.workDir + GRANULE + L1C_TILE_ID
+        L1C_TILE_ID = config.sourceDir + GRANULE + L1C_TILE_ID
         L2A_TILE_ID = config.L2A_UP_DIR + GRANULE + L2A_TILE_ID
 
         if(os.path.exists(L2A_TILE_ID) == False):
@@ -185,7 +182,7 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
+        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -792,15 +789,15 @@ class L2A_Tables(Borg):
     def importBandList(self):
         # convert JPEG-2000 input files to H5 file format
         # initialize H5 database for usage:
-        workDir = self._L1C_bandDir
-        os.chdir(workDir)
+        sourceDir = self._L1C_bandDir
+        os.chdir(sourceDir)
         database = self._ImageDataBase
         rasterX = False
         if(os.path.isfile(database)):
             os.remove(database)
             self.config.tracer.info('Old database removed')
         self.config.timestamp('L2A_Tables: start import')
-        dirs = sorted(os.listdir(workDir))
+        dirs = sorted(os.listdir(sourceDir))
         bandIndex = self.bandIndex
         for i in bandIndex:
             for filename in dirs:
@@ -817,7 +814,7 @@ class L2A_Tables(Borg):
         
         # 20m bands only: perform an up sampling of VIS from 60 m channels to 20
         if(self._resolution == 20):
-            workDir = self._L2A_bandDir.replace('R20m', 'R60m')
+            sourceDir = self._L2A_bandDir.replace('R20m', 'R60m')
             srcResolution = '_60m'
             channels = [17,19]
             upsampling = True
@@ -825,15 +822,15 @@ class L2A_Tables(Borg):
 
         # 10m bands only: perform an up sampling of SCL, AOT, WVP, and VIS from 20 m channels to 10
         elif(self._resolution == 10):
-            workDir = self._L2A_bandDir.replace('R10m', 'R20m')
+            sourceDir = self._L2A_bandDir.replace('R10m', 'R20m')
             srcResolution = '_20m'
             channels = [14,17,18,19]
             upsampling = True
             self.config.tracer.info('perform up sampling of SCL, WVP, AOT and VIS from 20m channels to 10m')
 
         if(upsampling == True):
-            os.chdir(workDir)
-            dirs = sorted(os.listdir(workDir))
+            os.chdir(sourceDir)
+            dirs = sorted(os.listdir(sourceDir))
             for i in channels:
                 for filename in dirs:
                     bandName = self.getBandNameFromIndex(i)
@@ -931,10 +928,10 @@ class L2A_Tables(Borg):
             return False
 
         self.config.logger.info('Start DEM alignment for tile')
-        workDir = self.config.home + '/' + demDir
-        if(os.path.exists(workDir) == False):
-            mkpath(workDir)
-        os.chdir(workDir)
+        sourceDir = self.config.home + '/' + demDir
+        if(os.path.exists(sourceDir) == False):
+            mkpath(sourceDir)
+        os.chdir(sourceDir)
 
         xy = self.cornerCoordinates
         xp = L2A_XmlParser(self.config, 'T2A')
@@ -1163,13 +1160,13 @@ class L2A_Tables(Borg):
         return
 
     def exportBandList(self):
-        workDir = self._L2A_bandDir
-        if(os.path.exists(workDir) == False):
-            self.config.tracer.fatal('missing directory %s:' % workDir)
+        sourceDir = self._L2A_bandDir
+        if(os.path.exists(sourceDir) == False):
+            self.config.tracer.fatal('missing directory %s:' % sourceDir)
             self.config.exitError()
             return False
 
-        os.chdir(workDir)
+        os.chdir(sourceDir)
         database = self._ImageDataBase
 
         self.config.timestamp('L2A_Tables: start export')
@@ -1215,18 +1212,20 @@ class L2A_Tables(Borg):
                 demDir = self.config.getStr('Common_Section', 'DEM_Directory')
                 if demDir == 'NONE':
                     continue
-
-            node = h5file.getNode('/arrays', bandName)
-            band = node.read()
-            kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
-            glymur.Jp2k(filename, band.astype(uint16), **kwargs)            
-            self.config.tracer.info('Band ' + bandName + ' exported')
-            self.config.timestamp('L2A_Tables: band ' + bandName + ' exported')
-            filename = os.path.basename(filename.strip('.jp2'))
-            if (bandName != 'VIS'):
-                imageId = etree.Element('IMAGE_ID_2A')
-                imageId.text = filename
-                Granules.append(imageId)
+            try:
+                node = h5file.getNode('/arrays', bandName)
+                band = node.read()
+                kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
+                glymur.Jp2k(filename, band.astype(uint16), **kwargs)            
+                self.config.tracer.info('Band ' + bandName + ' exported')
+                self.config.timestamp('L2A_Tables: band ' + bandName + ' exported')
+                filename = os.path.basename(filename.strip('.jp2'))
+                if (bandName != 'VIS'):
+                    imageId = etree.Element('IMAGE_ID_2A')
+                    imageId.text = filename
+                    Granules.append(imageId)
+            except:
+                continue
         
         h5file.close()
         # update on UP level:
@@ -1292,13 +1291,14 @@ class L2A_Tables(Borg):
             qii.insert(3, pxlqi2a)
             pviOld = xp.getTree('Quality_Indicators_Info', 'PVI_FILENAME')
             pviNew = etree.Element('PVI_FILENAME')
-            self.createPreviewImage()
             self.config.timestamp('L2A_Tables: preview image exported')
             fn = os.path.basename(self._L2A_Tile_PVI_File)
             fn = fn.replace('.jp2', '')  
             pviNew.text = fn
             qii.replace(pviOld, pviNew)
             xp.export()
+        
+        self.createPreviewImage()
         
         # cleanup:
         if(os.path.isfile(self._TmpFile)):
@@ -1318,13 +1318,8 @@ class L2A_Tables(Borg):
 
     def createPreviewImage(self):
         self.config.tracer.debug('Creating Preview Image')
-        workDir = self._L2A_QualityDataDir
-        os.chdir(workDir)
-
-        if(self._resolution != 60):
-            self.config.tracer.fatal('wrong resolution for this procedure, must be 60m')
-            self.config.exitError()
-            return False
+        sourceDir = self._L2A_QualityDataDir
+        os.chdir(sourceDir)
 
         filename = self._L2A_Tile_PVI_File
         acMode = self.acMode
@@ -1333,6 +1328,19 @@ class L2A_Tables(Borg):
         g = self.getBand(self.B03)
         r = self.getBand(self.B04)
         self.acMode = acMode
+        print ""
+        print "B:"
+        print b.mean() * self.config.dnScale
+        print b.min() * self.config.dnScale
+        print b.max() * self.config.dnScale
+        print "G:"
+        print g.mean() * self.config.dnScale
+        print g.min() * self.config.dnScale
+        print g.max() * self.config.dnScale
+        print "R:"   
+        print r.mean() * self.config.dnScale
+        print r.min() * self.config.dnScale
+        print r.max() * self.config.dnScale
 
         b = self.scaleImgArray(b)
         g = self.scaleImgArray(g)
@@ -1345,6 +1353,7 @@ class L2A_Tables(Borg):
         try:
             out = Image.merge('RGB', (r,g,b))
             #out.save(filename, 'PNG')
+            #return True
             a = array(out)
             kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
             glymur.Jp2k(filename, a.astype(uint8), **kwargs)   
@@ -1363,12 +1372,12 @@ class L2A_Tables(Borg):
             return False
 
         arrclip = arr.copy()
-        min = 0.0
-        max = 0.125
+        min_ = 0.0
+        max_ = 0.25
         scale = 255.0
-        arr = clip(arrclip, min, max)
+        arr = clip(arrclip, min_, max_)
         #SIITBX-50: wrong scale was used: 
-        scaledArr = uint8(arr*scale/max)
+        scaledArr = uint8(arr*scale/max_)
         return scaledArr
 
 
@@ -1423,7 +1432,7 @@ class L2A_Tables(Borg):
         bandName = self.getBandNameFromIndex(index)
         # the output is context sensitive
         # it will return TOA_reflectance (0:1) if self.acMode = False (this is the scene classification mode)
-        # it will return the unmodified value for all channels > 12, these are all generated products
+        # it will return the unmodified value for cirrus and all channels > 12, these are all generated products
         # it will return the radiance if self.acMode = True (this is the atmospheric correction mode)
 
         h5file = openFile(self._ImageDataBase, mode='r')
