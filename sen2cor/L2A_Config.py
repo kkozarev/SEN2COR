@@ -20,7 +20,7 @@ class L2A_Config(Borg):
     def __init__(self, sourceDir = False):
         self._processorName = 'Sentinel-2 Level 2A Prototype Processor (Sen2Cor)'
         self._processorVersion = '2.0.4'
-        self._processorDate = '2015.06.15'
+        self._processorDate = '2015.10.01'
         self._productVersion = '13'
 
         if(sourceDir):
@@ -2074,7 +2074,7 @@ class L2A_Config(Borg):
             L1C_TOA_QUANTIFICATION_VALUE =pic.L1C_L2A_Quantification_Values_List
             qvl = objectify.Element('L1C_L2A_Quantification_Values_List')
             qvl.L1C_TOA_QUANTIFICATION_VALUE = L1C_TOA_QUANTIFICATION_VALUE
-            self._dnScale =  float32(qvl.L1C_TOA_QUANTIFICATION_VALUE.text)            
+            self._dnScale =  float32(qvl.L1C_TOA_QUANTIFICATION_VALUE.text) * 2.0        
             qvl.L2A_BOA_QUANTIFICATION_VALUE = str(self._dnScale)
             qvl.L2A_BOA_QUANTIFICATION_VALUE.attrib['unit'] = 'none'
             qvl.L2A_AOT_QUANTIFICATION_VALUE = str(self._L2A_AOT_QUANTIFICATION_VALUE)
@@ -2300,7 +2300,7 @@ class L2A_Config(Borg):
         self.tracer.debug('Procedure: ' + procedure + ', elapsed time[s]: %0.3f' % tDelta.total_seconds())
         self.logger.info('Procedure: ' + procedure + ', elapsed time[s]: %0.3f' % tDelta.total_seconds())
         if(self.tracer.getEffectiveLevel()  != logging.NOTSET):
-            stdoutWrite('Procedure %s, elapsed time[s]: %0.3f\n' % (procedure, tDelta.total_seconds()))
+            stdoutWrite('%s, elapsed time[s]: %0.3f\n' % (procedure, tDelta.total_seconds()))
         #else:
         increment = tDelta.total_seconds() / self._tEstimation
         self._tTotal += increment

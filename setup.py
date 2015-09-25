@@ -228,6 +228,8 @@ os.system(cmdstr)
 os.system('conda install --yes --channel https://conda.binstar.org/s2tbx proj4')
 os.system('conda install --yes --channel https://conda.binstar.org/s2tbx contextlib2')
 os.system('conda install --yes --channel https://conda.binstar.org/s2tbx glymur')
+os.system('conda update --yes --channel https://conda.binstar.org/s2tbx pytables')
+
 # better to do this manually, see SUM section uninstall:
 #os.system('conda clean --yes --tarballs --index-cache --packages --source-cache')
 

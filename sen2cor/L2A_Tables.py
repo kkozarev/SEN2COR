@@ -182,7 +182,7 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
+        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -1063,10 +1063,11 @@ class L2A_Tables(Borg):
             tgt_nrows = indataArr.RasterYSize
             tgt_ncols = indataArr.RasterXSize        
         else: # the new input for JP2 data:
-            indataset = glymur.Jp2k(filename)
+            warnings.filterwarnings("ignore")
+            kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
+            indataset = glymur.Jp2k(filename, **kwargs)  
             # now the resamling:
             # to suppress the rounding error for TPZF testdata:
-            warnings.filterwarnings("ignore")
             src_nrows = indataset.shape[0]
             src_ncols = indataset.shape[1]
             tgt_nrows = self.config.nrows
@@ -1291,14 +1292,13 @@ class L2A_Tables(Borg):
             qii.insert(3, pxlqi2a)
             pviOld = xp.getTree('Quality_Indicators_Info', 'PVI_FILENAME')
             pviNew = etree.Element('PVI_FILENAME')
+            self.createPreviewImage()
             self.config.timestamp('L2A_Tables: preview image exported')
             fn = os.path.basename(self._L2A_Tile_PVI_File)
             fn = fn.replace('.jp2', '')  
             pviNew.text = fn
             qii.replace(pviOld, pviNew)
             xp.export()
-        
-        self.createPreviewImage()
         
         # cleanup:
         if(os.path.isfile(self._TmpFile)):
@@ -1327,21 +1327,8 @@ class L2A_Tables(Borg):
         b = self.getBand(self.B02)
         g = self.getBand(self.B03)
         r = self.getBand(self.B04)
-        self.acMode = acMode
-        print ""
-        print "B:"
-        print b.mean() * self.config.dnScale
-        print b.min() * self.config.dnScale
-        print b.max() * self.config.dnScale
-        print "G:"
-        print g.mean() * self.config.dnScale
-        print g.min() * self.config.dnScale
-        print g.max() * self.config.dnScale
-        print "R:"   
-        print r.mean() * self.config.dnScale
-        print r.min() * self.config.dnScale
-        print r.max() * self.config.dnScale
 
+        self.acMode = acMode
         b = self.scaleImgArray(b)
         g = self.scaleImgArray(g)
         r = self.scaleImgArray(r)
@@ -1352,8 +1339,6 @@ class L2A_Tables(Borg):
 
         try:
             out = Image.merge('RGB', (r,g,b))
-            #out.save(filename, 'PNG')
-            #return True
             a = array(out)
             kwargs = {"tilesize": (2048, 2048), "prog": "RPCL"}
             glymur.Jp2k(filename, a.astype(uint8), **kwargs)   
@@ -1373,7 +1358,7 @@ class L2A_Tables(Borg):
 
         arrclip = arr.copy()
         min_ = 0.0
-        max_ = 0.25
+        max_ = 0.125
         scale = 255.0
         arr = clip(arrclip, min_, max_)
         #SIITBX-50: wrong scale was used: 
@@ -1449,11 +1434,12 @@ class L2A_Tables(Borg):
         if(index > 12):
             return array # no further modification
         elif(self.acMode == True):
-            return self.TOA_refl2rad(index, array) # return radiance
+            L = self.TOA_refl2rad(index, array) # return radiance
+            return L
         else: # return reflectance value:
             return (array / self.config.dnScale) # scaling from 0:1
 
-
+    '''
     def TOA_refl2rad(self, index, array):
         # this converts TOA reflectance to radiance:
         (nrows, ncols, count) = self.getBandSize(index)
@@ -1483,7 +1469,64 @@ class L2A_Tables(Borg):
         sza = cos(rad_szi)
         L = float32(rtoa * e0 * sza / (pi * d2) / c1)
         return L
+        '''
+       
+    def TOA_refl2rad(self, index, indataArr):
+        ''' Converts the reflectance to radiance.
 
+            :param indataArray: the digital numbers representing TOA reflectance.
+            :type indataArray: a 2 dimensional numpy array (row x column) of type unsigned int 16.
+            :return: the pixel data converted to radiance.
+            :rtype: a 2 dimensional numpy array (row x column) of type unsigned int 16, representing radiance.
+            
+            Additional inputs from L1 user Product_Image_Characteristics metadata:
+            * QUANTIFICATION_VALUE: the scaling factor for converting DN to reflectance.
+            * U: the earth sun distance correction factor.
+            * SOLAR_IRRADIANCE: the mean solar exoatmospheric irradiances for each band.
+
+            Additional inputs from L1 tile Geometric_Info metadata:
+            * Sun_Angles_Grid.Zenith.Values: the interpolated zenith angles grid.
+
+        '''
+        # This converts TOA reflectance to radiance:
+        nrows = self.config.nrows
+        ncols = self.config.ncols
+        # The digital number (DN) as float:         
+        DN = indataArr.astype(float32)
+        c0 = 0
+
+        # The DN_Scale from the configuration:     
+        c1 =  float32(self.config.dnScale)
+
+        # TOA reflectance:        
+        rtoa = float32(c0 + DN / c1)
+
+        xp = L2A_XmlParser(self.config, 'UP2A')
+        pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')   
+        rc = pic.Reflectance_Conversion
+
+        # The earth sun distance correction factor,
+        # apparently already squared:
+        u2 =  float32(rc.U.text)
+
+        # The solar irradiance:        
+        si = rc.Solar_Irradiance_List.SOLAR_IRRADIANCE
+        e0 = float32(si[index].text)
+
+        # The solar zenith array:
+        x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
+        y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
+        szi = rectBivariateSpline(x,y,self.config.solze_arr)
+        rad_szi = radians(szi)
+        sza = float32(cos(rad_szi))
+        rtoa_e0_sza = float32(rtoa * sza * e0)
+        pi_u2 = float32(pi * u2 )
+        
+        # Finally, calculate the radiance and return array as unsigned int, this is multiplied by 100,
+        # to keep resolution - glymur only allows integer integer values for storage.        
+         
+        L = (rtoa_e0_sza / pi_u2 )
+        return L
 
     def TOA_rad2refl(self, index):
         # this converts TOA radiance to reflectance:

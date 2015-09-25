@@ -117,10 +117,9 @@ class L2A_XmlParser(Borg):
             stdoutWrite('Metadata file is valid.\n')                
             return True
         except etree.XMLSyntaxError, err:
-            stderrWrite('Metadata file did not pass validation:\n')
-            stderrWrite('- Schema file: %s\n' % self._scheme)
-            stderrWrite('- Details: %s\n' % str(err))
-            stderrWrite('It is strongly recommended to correct these errors before continuing.\n')
+            stdoutWrite('Metadata file is invalid, see logfile for details.\n')
+            self._config.logger.error('Schema file: %s' % self._scheme)
+            self._config.logger.error('Details: %s' % str(err))
             return False
 
 
