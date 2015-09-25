@@ -22,8 +22,8 @@ name = 'sen2cor'
 #
 # This needs to be changed with each new version:
 #------------------------------------------------
-version = '2.0.3'
-longVersion = '02.00.03'
+version = '2.0.4'
+longVersion = '02.00.04'
 #
 # Do not change anything below:
 #----------------------------------------------------------------------------

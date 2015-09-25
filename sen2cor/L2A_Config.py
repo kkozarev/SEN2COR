@@ -20,7 +20,7 @@ class L2A_Config(Borg):
     def __init__(self, sourceDir = False):
         self._processorName = 'Sentinel-2 Level 2A Prototype Processor (Sen2Cor)'
         self._processorVersion = '2.0.4'
-        self._processorDate = '2015.10.01'
+        self._processorDate = '2015.09.25'
         self._productVersion = '13'
 
         if(sourceDir):
@@ -2368,14 +2368,15 @@ class L2A_Config(Borg):
         par = node.Lib_Dir
         if par is None: self.parNotFound(par)
         moduleDir = os.environ['SEN2COR_BIN'] + '/'
+        self.libDir = moduleDir + 'lib'
         if self._resolution == 10:
-            self.libDir = moduleDir + 'lib/10'
+            libDir = self.libDir + '10'
         else:
-            self.libDir = moduleDir + 'lib/20_60'
+            libDir = self.libDir + '20_60'
         
         par = node.Atm_Data_Filename
         if par is None: self.parNotFound(par)
-        self.atmDataFn = self.libDir + '/' + par.text
+        self.atmDataFn = libDir + '/' + par.text
 
     ### Scaling:
         node = xp.getTree('Atmospheric_Correction', 'Calibration')

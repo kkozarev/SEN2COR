@@ -1327,8 +1327,8 @@ class L2A_Tables(Borg):
         b = self.getBand(self.B02)
         g = self.getBand(self.B03)
         r = self.getBand(self.B04)
-
         self.acMode = acMode
+        
         b = self.scaleImgArray(b)
         g = self.scaleImgArray(g)
         r = self.scaleImgArray(r)
@@ -1355,6 +1355,15 @@ class L2A_Tables(Borg):
             self.config.tracer.fatal('must be a 2 dimensional array')
             self.config.exitError()
             return False
+
+        src_ncols = self.config.ncols
+        src_nrows = self.config.nrows
+        tgt_ncols = 343.0
+        tgt_nrows = 343.0
+
+        zoomX = float64(tgt_ncols)/float64(src_ncols)
+        zoomY = float64(tgt_nrows)/float64(src_nrows)
+        arr = zoom(arr, ([zoomX,zoomY]), order=0)        
 
         arrclip = arr.copy()
         min_ = 0.0
