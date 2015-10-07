@@ -12,4 +12,4 @@ This Software contains an IPR of DLR. This part is no Open Source and the
 module for the Atmospheric Correction is attached to this software in form
 of a binary library only.
 
-Please read the docs located on: http://s2tbx.telespazio-vega.de for further info.
+Please read the docs located at: http://s2tbx.telespazio-vega.de/sen2cor for further info.

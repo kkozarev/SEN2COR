@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: sen2cor
-Version: 2.0.3
+Version: 2.0.4
 Summary: sen2cor: Sentinel 2 Level 2A Prototype Processor
 Home-page: www.telespazio-vega.de
 Author: Telespazio VEGA Deutschland GmbH
@@ -20,7 +20,7 @@ Description: sen2cor: Sentinel 2 Level 2A Prototype Processor
         module for the Atmospheric Correction is attached to this software in form
         of a binary library only.
         
-        Please read the docs located on: http://s2tbx.telespazio-vega.de for further info.
+        Please read the docs located at: http://s2tbx.telespazio-vega.de/sen2cor for further info.
         
 Platform: linux-x86_64
 Platform: macosx-10.5-x86_64
