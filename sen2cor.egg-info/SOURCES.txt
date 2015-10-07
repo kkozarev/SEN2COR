@@ -1,10 +1,10 @@
 MANIFEST.in
 README.md
-README.pdf
 README.txt
 SETUP.pdf
 setup.cfg
 setup.py
+sen2cor/L2A_AtmCorr.so
 sen2cor/L2A_Borg.py
 sen2cor/L2A_Config.py
 sen2cor/L2A_Library.py
@@ -19,6 +19,7 @@ sen2cor.egg-info/SOURCES.txt
 sen2cor.egg-info/dependency_links.txt
 sen2cor.egg-info/entry_points.txt
 sen2cor.egg-info/not-zip-safe
+sen2cor.egg-info/pbr.json
 sen2cor.egg-info/top_level.txt
 sen2cor/build/lib.linux-x86_64-2.7/L2A_AtmCorr.so
 sen2cor/build/lib.linux-x86_64-2.7/libopenjp2.so
