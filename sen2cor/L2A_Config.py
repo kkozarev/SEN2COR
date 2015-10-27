@@ -60,9 +60,9 @@ class L2A_Config(Borg):
             self._ECMWF = ''
             self._DEM = ''
             self._L2A_BOA_QUANTIFICATION_VALUE = None
-            self._L2A_WVP_QUANTIFICATION_VALUE = 1000
-            self._L2A_AOT_QUANTIFICATION_VALUE = 1000
-            self._dnScale = None
+            self._L2A_WVP_QUANTIFICATION_VALUE = 1000.0
+            self._L2A_AOT_QUANTIFICATION_VALUE = 1000.0
+            self._dnScale = 1000.0
             self._adj_km = 1.0
             self._ch940 = array([8,8,9,9,0,0])
             self._cellsize = 0 # pixelsize (m), cellsize (km)
@@ -2074,8 +2074,12 @@ class L2A_Config(Borg):
             L1C_TOA_QUANTIFICATION_VALUE =pic.L1C_L2A_Quantification_Values_List
             qvl = objectify.Element('L1C_L2A_Quantification_Values_List')
             qvl.L1C_TOA_QUANTIFICATION_VALUE = L1C_TOA_QUANTIFICATION_VALUE
-            self._dnScale =  float32(qvl.L1C_TOA_QUANTIFICATION_VALUE.text) * 2.0        
-            qvl.L2A_BOA_QUANTIFICATION_VALUE = str(self._dnScale)
+            self._dnScale =  float32(qvl.L1C_TOA_QUANTIFICATION_VALUE.text)      
+            rc = pic.Reflectance_Conversion
+            # The earth sun distance correction factor,
+            # already squared:
+            self._d2 = float32(rc.U.text)
+            qvl.L2A_BOA_QUANTIFICATION_VALUE = str(int(self._dnScale))
             qvl.L2A_BOA_QUANTIFICATION_VALUE.attrib['unit'] = 'none'
             qvl.L2A_AOT_QUANTIFICATION_VALUE = str(self._L2A_AOT_QUANTIFICATION_VALUE)
             qvl.L2A_AOT_QUANTIFICATION_VALUE.attrib['unit'] = 'none'

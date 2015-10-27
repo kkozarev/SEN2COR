@@ -77,7 +77,7 @@ class L2A_Process(object):
             self.config.logger.info('selected resolution is 10m')
             if(self._processed20 == False):
                 self.config.resolution = 20
-                stdoutWrite('20m resolution must be processed first ...\n')
+                stdoutWrite('check if 20m table exists ...\n')
                 self.config.tracer.info('20m resolution must be processed first')
                 self.config.logger.info('20m resolution must be processed first')
                 self.selectAndProcess(tile)
@@ -95,7 +95,7 @@ class L2A_Process(object):
             self.config.logger.info('selected resolution is 20m')
             if(self._processed60 == False):
                 self.config.resolution = 60
-                stdoutWrite('60m resolution must be processed first ...\n')
+                stdoutWrite('check if 60m table exists...\n')
                 self.config.tracer.info('60m resolution must be processed first')
                 self.config.logger.info('60m resolution must be processed first')
                 self.selectAndProcess(tile)
@@ -121,8 +121,11 @@ class L2A_Process(object):
             self.config.logger.debug('wrong resolution for processing configured: ', str(self.config.resolution))
             return False
 
-
     def process(self):
+        if self.tables.checkAotMapIsPresent():
+            self.config.timestamp('L2A_Process: resolution '+ str(self.config.resolution) + ' m already processed.')
+            return True
+
         astr = 'L2A_Process: processing with resolution ' + str(self.config.resolution) + ' m'
         self.config.timestamp(astr)
         self.config.timestamp('L2A_Process: start of pre processing')
@@ -151,11 +154,11 @@ class L2A_Process(object):
 
         return True
         
-
     def preprocess(self):
         self.config.tracer.info('Pre-processing with resolution %d m', self.config.resolution)
         self.config.logger.info('Pre-processing with resolution %d m', self.config.resolution)
         self.config.tTotal = 0
+        
         # this is to check the config for the L2A_AtmCorr in ahead.
         # This has historical reasons due to ATCOR porting.
         # Should be moved to the L2A_Config for better design:

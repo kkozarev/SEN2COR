@@ -61,6 +61,14 @@ def showImage(arr):
     return True
 
 
+def showMask(alist, row, col):
+    arr = zeros(row,col)
+    arr[alist] = 255
+    img = Image.fromarray(arr)
+    img.show()
+    return True
+
+    
 def reverse(a): return a[::-1]
 
 

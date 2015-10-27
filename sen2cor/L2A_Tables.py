@@ -182,7 +182,7 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
+        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -786,6 +786,16 @@ class L2A_Tables(Borg):
         else:
             return False
 
+    def checkAotMapIsPresent(self):
+        sourceDir = self._L2A_ImgDataDir + '/R' + str(self.config.resolution) + 'm'
+        os.chdir(sourceDir)
+        dirs = sorted(os.listdir(sourceDir))
+        filemask = '*_AOT_L2A_*' + '.jp2'
+        for filename in dirs:
+            if fnmatch.fnmatch(filename, filemask) == True:
+                return True
+        return False
+
     def importBandList(self):
         # convert JPEG-2000 input files to H5 file format
         # initialize H5 database for usage:
@@ -797,6 +807,7 @@ class L2A_Tables(Borg):
             os.remove(database)
             self.config.tracer.info('Old database removed')
         self.config.timestamp('L2A_Tables: start import')
+
         dirs = sorted(os.listdir(sourceDir))
         bandIndex = self.bandIndex
         for i in bandIndex:
@@ -812,35 +823,46 @@ class L2A_Tables(Borg):
                 break
         upsampling = False
         
-        # 20m bands only: perform an up sampling of VIS from 60 m channels to 20
-        if(self._resolution == 20):
-            sourceDir = self._L2A_bandDir.replace('R20m', 'R60m')
-            srcResolution = '_60m'
-            channels = [17,19]
-            upsampling = True
-            self.config.tracer.info('perform up sampling of AOT and VIS from 60m channels to 20m')
+#         # 20m bands only: perform an up sampling of VIS from 60 m channels to 20
+#         if(self._resolution == 20):
+#             self.config.tracer.info('perform up sampling of AOT and VIS from 60m channels to 20m')
+#             srcResolution = '_60m'
+#             channels = [17,19]
+#             sourceDir = self._L2A_bandDir.replace('R20m', 'R60m')
+#             upsampling = True
 
-        # 10m bands only: perform an up sampling of SCL, AOT, WVP, and VIS from 20 m channels to 10
-        elif(self._resolution == 10):
-            sourceDir = self._L2A_bandDir.replace('R10m', 'R20m')
+        # 10m bands only: perform an up sampling of SCL, AOT, and VIS from 20 m channels to 10
+        if(self._resolution == 10):
+            self.config.tracer.info('perform up sampling of SCL, AOT and VIS from 20m channels to 10m')
             srcResolution = '_20m'
-            channels = [14,17,18,19]
+            channels = [17,19]
+            sourceDir = self._L2A_bandDir.replace('R10m', 'R20m')
             upsampling = True
-            self.config.tracer.info('perform up sampling of SCL, WVP, AOT and VIS from 20m channels to 10m')
-
-        if(upsampling == True):
+        
+        if upsampling == True:
             os.chdir(sourceDir)
             dirs = sorted(os.listdir(sourceDir))
             for i in channels:
                 for filename in dirs:
                     bandName = self.getBandNameFromIndex(i)
-                    if (bandName == 'VIS') or (bandName == 'SCL') or \
-                       (bandName == 'AOT') or (bandName == 'WVP'):
+                    if (bandName == 'VIS') or (bandName == 'AOT') or (bandName == 'WVP'):
                         filemask = '*_' + bandName + '_L2A_*' + srcResolution + '.jp2'
                     if fnmatch.fnmatch(filename, filemask) == False:
                         continue
                     self.importBand(i, filename)
                     break
+            # scene class is in different directory:
+            sourceDir = self._L2A_ImgDataDir
+            os.chdir(sourceDir)
+            dirs = sorted(os.listdir(sourceDir))
+            bandName = 'SCL'
+            channel = 14
+            for filename in dirs:                        
+                filemask = '*_' + bandName + '_L2A_*' + srcResolution + '.jp2'
+                if fnmatch.fnmatch(filename, filemask) == False:
+                    continue
+                self.importBand(channel, filename)
+                break
 
         if(self.gdalDEM() == True):
             # generate hill shadow, slope and aspect using DEM:
@@ -1090,23 +1112,23 @@ class L2A_Tables(Borg):
                 zoomX = float64(tgt_ncols)/float64(src_ncols)
                 zoomY = float64(tgt_nrows)/float64(src_nrows)
                 indataArr = zoom(indataArr, ([zoomX,zoomY]), order=3)
-            # next section to correct small resampling errors in TPZF testdata:
-            src_nrows = indataArr.shape[0]
-            src_ncols = indataArr.shape[1]     
-            if src_nrows < tgt_nrows:
-                nrows = tgt_nrows - src_nrows
-                a = zeros((nrows, src_ncols), dtype=uint16)
-                indataArr = append(indataArr,a,axis=0) 
-            elif src_nrows > tgt_nrows:
-                nrows = src_nrows - tgt_nrows
-                indataArr = indataArr[:-nrows,:]
-            if src_ncols < tgt_ncols:
-                ncols = tgt_ncols - src_ncols
-                a = zeros((tgt_nrows, ncols), dtype=uint16)
-                indataArr = append(indataArr,a,axis=1)
-            elif src_ncols > tgt_ncols:
-                ncols = src_ncols - tgt_ncols
-                indataArr = indataArr[:,:-ncols]
+#             # next section to correct small resampling errors in TPZF testdata:
+#             src_nrows = indataArr.shape[0]
+#             src_ncols = indataArr.shape[1]     
+#             if src_nrows < tgt_nrows:
+#                 nrows = tgt_nrows - src_nrows
+#                 a = zeros((nrows, src_ncols), dtype=uint16)
+#                 indataArr = append(indataArr,a,axis=0) 
+#             elif src_nrows > tgt_nrows:
+#                 nrows = src_nrows - tgt_nrows
+#                 indataArr = indataArr[:-nrows,:]
+#             if src_ncols < tgt_ncols:
+#                 ncols = tgt_ncols - src_ncols
+#                 a = zeros((tgt_nrows, ncols), dtype=uint16)
+#                 indataArr = append(indataArr,a,axis=1)
+#             elif src_ncols > tgt_ncols:
+#                 ncols = src_ncols - tgt_ncols
+#                 indataArr = indataArr[:,:-ncols]
             indataset = None
         
         h5file = openFile(self._ImageDataBase, mode='a', title =  str(self._resolution) + 'm bands')
@@ -1292,14 +1314,16 @@ class L2A_Tables(Borg):
             qii.insert(3, pxlqi2a)
             pviOld = xp.getTree('Quality_Indicators_Info', 'PVI_FILENAME')
             pviNew = etree.Element('PVI_FILENAME')
-            self.createPreviewImage()
+            #self.createPreviewImage()
             self.config.timestamp('L2A_Tables: preview image exported')
             fn = os.path.basename(self._L2A_Tile_PVI_File)
             fn = fn.replace('.jp2', '')  
             pviNew.text = fn
             qii.replace(pviOld, pviNew)
             xp.export()
-        
+
+        self.createPreviewImage()
+   
         # cleanup:
         if(os.path.isfile(self._TmpFile)):
             os.remove(self._TmpFile)
@@ -1356,18 +1380,18 @@ class L2A_Tables(Borg):
             self.config.exitError()
             return False
 
-        src_ncols = self.config.ncols
-        src_nrows = self.config.nrows
-        tgt_ncols = 343.0
-        tgt_nrows = 343.0
-
-        zoomX = float64(tgt_ncols)/float64(src_ncols)
-        zoomY = float64(tgt_nrows)/float64(src_nrows)
-        arr = zoom(arr, ([zoomX,zoomY]), order=0)        
+#         src_ncols = self.config.ncols
+#         src_nrows = self.config.nrows
+#         tgt_ncols = 343.0
+#         tgt_nrows = 343.0
+#  
+#         zoomX = float64(tgt_ncols)/float64(src_ncols)
+#         zoomY = float64(tgt_nrows)/float64(src_nrows)
+#         arr = zoom(arr, ([zoomX,zoomY]), order=0)        
 
         arrclip = arr.copy()
         min_ = 0.0
-        max_ = 0.125
+        max_ = 0.25
         scale = 255.0
         arr = clip(arrclip, min_, max_)
         #SIITBX-50: wrong scale was used: 
@@ -1446,39 +1470,8 @@ class L2A_Tables(Borg):
             L = self.TOA_refl2rad(index, array) # return radiance
             return L
         else: # return reflectance value:
-            return (array / self.config.dnScale) # scaling from 0:1
+            return (array / float32(self.config.dnScale)) # scaling from 0:1
 
-    '''
-    def TOA_refl2rad(self, index, array):
-        # this converts TOA reflectance to radiance:
-        (nrows, ncols, count) = self.getBandSize(index)
-        DN = array
-        if(self.config.resolution == 10):
-            validBand = [None,0,1,2,None,None,None,3,None,None,None,None]
-        else:
-            validBand = [0,1,2,3,4,5,6,None,7,8,9,10,11]
-        bandIndex = validBand[index]
-        if(bandIndex == None):
-            self.config.tracer.debug('Wrong band index %02d for selected resolution %02d', index, self.config.resolution)
-            self.config.exitError()
-
-        #if index > 7:  # band 8 is not included !!!
-        #    index -= 1
-        c0 = self.config.c0[bandIndex]
-        c1 = self.config.c1[bandIndex]
-        e0 = self.config.e0[bandIndex]
-        dnScale = self.config.dnScale
-
-        rtoa = float32(c0 + DN / dnScale)
-        d2 = self.config.d2
-        x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
-        y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
-        szi = rectBivariateSpline(x,y,self.config.solze_arr)
-        rad_szi = radians(szi)
-        sza = cos(rad_szi)
-        L = float32(rtoa * e0 * sza / (pi * d2) / c1)
-        return L
-        '''
        
     def TOA_refl2rad(self, index, indataArr):
         ''' Converts the reflectance to radiance.
@@ -1490,38 +1483,41 @@ class L2A_Tables(Borg):
             
             Additional inputs from L1 user Product_Image_Characteristics metadata:
             * QUANTIFICATION_VALUE: the scaling factor for converting DN to reflectance.
-            * U: the earth sun distance correction factor.
+            * d2: the earth sun distance correction factor.
             * SOLAR_IRRADIANCE: the mean solar exoatmospheric irradiances for each band.
 
             Additional inputs from L1 tile Geometric_Info metadata:
             * Sun_Angles_Grid.Zenith.Values: the interpolated zenith angles grid.
 
         '''
-        # This converts TOA reflectance to radiance:
         nrows = self.config.nrows
         ncols = self.config.ncols
+ 
         # The digital number (DN) as float:         
         DN = indataArr.astype(float32)
         c0 = 0
-
-        # The DN_Scale from the configuration:     
-        c1 =  float32(self.config.dnScale)
-
+        if(self.config.resolution == 10):
+            validBand = [None,0,1,2,None,None,None,3,None,None,None,None,None]
+        else:
+            validBand = [0,1,2,3,4,5,6,None,7,8,9,10,11]
+        bandIndex = validBand[index]
+        if(bandIndex == None):
+            self.config.tracer.debug('Wrong band index %02d for selected resolution %02d', index, self.config.resolution)
+            self.config.exitError()
+ 
+        c1 =  float32(self.config.c1[bandIndex])
+        e0 =  float32(self.config.e0[bandIndex])
+ 
         # TOA reflectance:        
-        rtoa = float32(c0 + DN / c1)
-
-        xp = L2A_XmlParser(self.config, 'UP2A')
-        pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')   
-        rc = pic.Reflectance_Conversion
-
-        # The earth sun distance correction factor,
-        # apparently already squared:
-        u2 =  float32(rc.U.text)
-
-        # The solar irradiance:        
-        si = rc.Solar_Irradiance_List.SOLAR_IRRADIANCE
-        e0 = float32(si[index].text)
-
+        rtoa = float32(c0 + DN * c1 * self.config.dnScale)
+#         xp = L2A_XmlParser(self.config, 'UP2A')
+#         pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')   
+#         rc = pic.Reflectance_Conversion
+# 
+#         # The solar irradiance:        
+#         si = rc.Solar_Irradiance_List.SOLAR_IRRADIANCE
+#         e0 = float32(si[bandIndex].text)
+ 
         # The solar zenith array:
         x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
         y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
@@ -1529,34 +1525,39 @@ class L2A_Tables(Borg):
         rad_szi = radians(szi)
         sza = float32(cos(rad_szi))
         rtoa_e0_sza = float32(rtoa * sza * e0)
-        pi_u2 = float32(pi * u2 )
-        
-        # Finally, calculate the radiance and return array as unsigned int, this is multiplied by 100,
-        # to keep resolution - glymur only allows integer integer values for storage.        
+        # The earth sun distance correction factor,
+        # apparently already squared:
+        pi_u2 = float32(pi * self.config.d2)
          
-        L = (rtoa_e0_sza / pi_u2 )
+        # Finally, calculate the radiance and return array as unsigned int,
+        # glymur only allows only integer values for storage.        
+          
+        L = (rtoa_e0_sza / pi_u2)
+#         print 'L:', index, L.mean()
         return L
+
 
     def TOA_rad2refl(self, index):
         # this converts TOA radiance to reflectance:
         # a helper function for converting ATCOR Input to L2A_SceneClass
         # only for testing purposes - not needed in normal operation
-        DN = self.getBand(index)
-        nrows, ncols, count = self.getBandSize(index)
-        d2 = self.config.d2
-        #if(index > 7): #band 8 is not included !!!
-        #    index = index-1
+        
         if(self.config.resolution == 10):
-            validBand = [None,0,1,2,None,None,None,3,None,None,None,None]
+            validBand = [None,1,2,3,None,None,None,7,None,None,None,None,None]
         else:
             validBand = [0,1,2,3,4,5,6,None,7,8,9,10,11]
         bandIndex = validBand[index]
+        print self.getBandNameFromIndex(bandIndex)
+        
         if(bandIndex == None):
             self.config.tracer.debug('Wrong band index %02d for selected resolution %02d', index, self.config.resolution)
             self.config.exitError()
-
+            
+        DN = self.getBand(bandIndex)
+        nrows, ncols, count = self.getBandSize(bandIndex)
+        d2 = self.config.d2
         e0 = self.config.e0[bandIndex]
-        c0 = self.config.c0[bandIndex]
+        c0 = 0
         c1 = self.config.c1[bandIndex]
         x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
         y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
