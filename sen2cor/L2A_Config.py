@@ -19,8 +19,8 @@ class L2A_Config(Borg):
     _shared = {}
     def __init__(self, sourceDir = False):
         self._processorName = 'Sentinel-2 Level 2A Prototype Processor (Sen2Cor)'
-        self._processorVersion = '2.0.4'
-        self._processorDate = '2015.09.25'
+        self._processorVersion = '2.0.5'
+        self._processorDate = '2015.11.01'
         self._productVersion = '13'
 
         if(sourceDir):
@@ -113,12 +113,13 @@ class L2A_Config(Borg):
             self._solze_arr = None
             self._vaa_arr = None
             self._vza_arr = None
-            self._visibility = 30.0
+            self._visibility = 23.0
             self._wl940a = array([0.895, 1.000])     # range of moderate wv absorption region around  940 nm
             self._wl1130a = array([1.079, 1.180])    # range of moderate wv absorption region around 1130 nm
             self._wl1400a = array([1.330, 1.490])    # range for interpolation
             self._wl1900a = array([1.780, 1.970])    # range for interpolation
             self._wv_thr_cirrus = 0.60
+            self._sc_lp_blu = 1.0
             self._timestamp = datetime.now()
             self._c0 = None
             self._c1 = None
@@ -148,6 +149,19 @@ class L2A_Config(Borg):
             self._creationDate = None
             self._targetDirectory = None
             return
+
+    def get_sc_lp_blu(self):
+        return self._sc_lp_blu
+
+
+    def set_sc_lp_blu(self, value):
+        self._sc_lp_blu = value
+        self.setLpBlueScale()
+        
+
+    def del_sc_lp_blu(self):
+        del self._sc_lp_blu
+
 
     def get_t_total(self):
         return self._tTotal
@@ -1785,6 +1799,7 @@ class L2A_Config(Borg):
     altit = property(get_altit, set_altit, del_altit, "altit's docstring")
     npref = property(get_npref, set_npref, del_npref, "npref's docstring")
     phi_scl_min = property(get_phi_scl_min, set_phi_scl_min, del_phi_scl_min, "phi_scl_min's docstring")
+    sc_lp_blu = property(get_sc_lp_blu, set_sc_lp_blu, del_sc_lp_blu, "sc_lp_blu's docstring")
     phi_unscl_max = property(get_phi_unscl_max, set_phi_unscl_max, del_phi_unscl_max, "phi_unscl_max's docstring")
     pixelsize = property(get_pixelsize, set_pixelsize, del_pixelsize, "pixelsize's docstring")
     resolution = property(get_resolution, set_resolution, del_resolution, "resolution's docstring")
@@ -2408,6 +2423,10 @@ class L2A_Config(Borg):
         self.wv_thr_cirrus = clip(float32(par.text), 0.1, 1.0)
         self.tracer.info('Cirrus threshold will be clipped between 0.1 and 1.0')
 
+        par = node.Scale_Lp_Blue
+        if par is None: self.parNotFound(par)
+        self._sc_lp_blu = float32(par.text)
+
     ### Flags:
         node = xp.getTree('Atmospheric_Correction', 'Flags')
         if node is None: self.parNotFound(node)
@@ -2674,6 +2693,13 @@ class L2A_Config(Borg):
             pass
         else: default[1] = setpoint[1]
         return default
+
+
+    def setLpBlueScale(self):
+        xp = L2A_XmlParser(self, 'GIPP')
+        cal = xp.getTree('Atmospheric_Correction', 'Calibration')
+        cal.Scale_Lp_Blue = str(self.sc_lp_blu)
+        xp.export()
 
 
     def _getDoc(self):
