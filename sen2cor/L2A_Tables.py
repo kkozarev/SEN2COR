@@ -182,7 +182,8 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
+#         self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
+        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -883,7 +884,7 @@ class L2A_Tables(Borg):
 
             os.remove(self._TmpDemFile)
         
-        self.createPreviewImage()
+#         self.createPreviewImage()
         self.config.timestamp('L2A_Tables: stop import')
         return True
 
@@ -1298,6 +1299,7 @@ class L2A_Tables(Borg):
             qii.insert(3, pxlqi2a)
             pviOld = xp.getTree('Quality_Indicators_Info', 'PVI_FILENAME')
             pviNew = etree.Element('PVI_FILENAME')
+            self.createPreviewImage()
             self.config.timestamp('L2A_Tables: preview image exported')
             fn = os.path.basename(self._L2A_Tile_PVI_File)
             fn = fn.replace('.jp2', '')  
@@ -1305,7 +1307,7 @@ class L2A_Tables(Borg):
             qii.replace(pviOld, pviNew)
             xp.export()
 
-        self.createPreviewImage()
+
    
         # cleanup:
         if(os.path.isfile(self._TmpFile)):
@@ -1363,14 +1365,14 @@ class L2A_Tables(Borg):
             self.config.exitError()
             return False
 
-#         src_ncols = self.config.ncols
-#         src_nrows = self.config.nrows
-#         tgt_ncols = 343.0
-#         tgt_nrows = 343.0
-#  
-#         zoomX = float64(tgt_ncols)/float64(src_ncols)
-#         zoomY = float64(tgt_nrows)/float64(src_nrows)
-#         arr = zoom(arr, ([zoomX,zoomY]), order=0)        
+        src_ncols = self.config.ncols
+        src_nrows = self.config.nrows
+        tgt_ncols = 343.0
+        tgt_nrows = 343.0
+  
+        zoomX = float64(tgt_ncols)/float64(src_ncols)
+        zoomY = float64(tgt_nrows)/float64(src_nrows)
+        arr = zoom(arr, ([zoomX,zoomY]), order=0)        
 
         arrclip = arr.copy()
         min_ = 0.0

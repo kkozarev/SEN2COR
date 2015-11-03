@@ -255,7 +255,7 @@ def main(args=None):
         config.logger.info(HelloWorld)
         config.calcEarthSunDistance2(tile)
         if args.resolution == None:
-            resolution = 60.0
+            resolution = 60
         else:
             resolution = args.resolution
 
