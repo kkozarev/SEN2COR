@@ -114,7 +114,20 @@
     <Sensor>
       <Solar_Irradiance units="[mW/cm2 um-1]">
         <Band_List>
-          <wavelength fwhm="0.018800" e0="187.282">0.442250</wavelength>
+          <wavelength fwhm="0.018800" e0="191.357">0.442250</wavelength>
+          <wavelength fwhm="0.064400" e0="194.163">0.492225</wavelength>
+          <wavelength fwhm="0.034800" e0="182.261">0.560310</wavelength>
+          <wavelength fwhm="0.028800" e0="151.279">0.663085</wavelength>
+          <wavelength fwhm="0.014400" e0="142.556">0.703959</wavelength>
+          <wavelength fwhm="0.014800" e0="128.832">0.742381</wavelength>
+          <wavelength fwhm="0.018800" e0="116.319">0.781725</wavelength>
+          <wavelength fwhm="0.014400" e0="103.639">0.833331</wavelength>
+          <wavelength fwhm="0.022800" e0="095.519">0.865816</wavelength>
+          <wavelength fwhm="0.019200" e0="081.304">0.942251</wavelength>
+          <wavelength fwhm="0.028800" e0="036.715">1.373680</wavelength>
+          <wavelength fwhm="0.088400" e0="024.559">1.609431</wavelength>
+          <wavelength fwhm="0.172800" e0="008.525">2.193888</wavelength>
+          <!-- wavelength fwhm="0.018800" e0="187.282">0.442250</wavelength>
           <wavelength fwhm="0.064400" e0="195.995">0.492225</wavelength>
           <wavelength fwhm="0.034800" e0="182.252">0.560310</wavelength>
           <wavelength fwhm="0.028800" e0="151.628">0.663085</wavelength>
@@ -122,13 +135,11 @@
           <wavelength fwhm="0.014800" e0="128.363">0.742381</wavelength>
           <wavelength fwhm="0.018800" e0="116.686">0.781725</wavelength>
           <wavelength fwhm="0.014400" e0="104.008">0.833331</wavelength>
-          <!-- B8 -->
           <wavelength fwhm="0.022800" e0="095.447">0.865816</wavelength>
-          <!-- B8A -->
           <wavelength fwhm="0.019200" e0="081.983">0.942251</wavelength>
           <wavelength fwhm="0.028800" e0="036.705">1.373680</wavelength>
           <wavelength fwhm="0.088400" e0="024.734">1.609431</wavelength>
-          <wavelength fwhm="0.172800" e0="008.649">2.193888</wavelength>
+          <wavelength fwhm="0.172800" e0="008.649">2.193888</wavelength -->
         </Band_List>
       </Solar_Irradiance>
       <Calibration units="(mW cm-2 sr-1 um-1), L = c0 + c1 * DN">
