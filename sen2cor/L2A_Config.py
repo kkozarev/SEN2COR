@@ -2054,6 +2054,15 @@ class L2A_Config(Borg):
         fn_L2A = L2A_UP_DIR + '/' + fn_L2A
         self.L1C_UP_MTD_XML = fn_L1C
         self.L2A_UP_MTD_XML = fn_L2A
+
+        # this must always be initialized:
+        xp = L2A_XmlParser(self, 'UP1C') 
+        pic = xp.getTree('General_Info', 'Product_Image_Characteristics')        
+        self._dnScale = float32(pic.QUANTIFICATION_VALUE.text)
+        rc = pic.Reflectance_Conversion
+        # The earth sun distance correction factor, already squared:
+        self._d2 = float32(rc.U.text)             
+
         if firstInit == True:
             # copy L2A schemes from config_dir into rep_info:    
             xp = L2A_XmlParser(self, 'GIPP')
@@ -2086,14 +2095,7 @@ class L2A_Config(Borg):
             #qo.METADATA_LEVEL = 'Standard'
             qo.Aux_List.attrib['productLevel'] = 'Level-2Ap'
             pic = xp.getTree('General_Info', 'L2A_Product_Image_Characteristics')        
-            L1C_TOA_QUANTIFICATION_VALUE =pic.L1C_L2A_Quantification_Values_List
             qvl = objectify.Element('L1C_L2A_Quantification_Values_List')
-            qvl.L1C_TOA_QUANTIFICATION_VALUE = L1C_TOA_QUANTIFICATION_VALUE
-            self._dnScale =  float32(qvl.L1C_TOA_QUANTIFICATION_VALUE.text)      
-            rc = pic.Reflectance_Conversion
-            # The earth sun distance correction factor,
-            # already squared:
-            self._d2 = float32(rc.U.text)
             qvl.L2A_BOA_QUANTIFICATION_VALUE = str(int(self._dnScale))
             qvl.L2A_BOA_QUANTIFICATION_VALUE.attrib['unit'] = 'none'
             qvl.L2A_AOT_QUANTIFICATION_VALUE = str(self._L2A_AOT_QUANTIFICATION_VALUE)
@@ -2332,16 +2334,16 @@ class L2A_Config(Borg):
         return
 
 
-    def calcEarthSunDistance2(self, tile):
-        year =  int(tile[25:29])
-        month = int(tile[29:31])
-        day = int(tile[31:33])
-        doy = date(year,month,day)
-        doy = int(doy.strftime('%j'))
-        exc_earth = 0.01673 # earth-sun distance in A.U.
-        dastr = 1.0 + exc_earth * sin(2 * pi * (doy - 93.5) / 365.)
-        self._d2 = dastr * dastr
-        return
+#     def calcEarthSunDistance2(self, tile):
+#         year =  int(tile[25:29])
+#         month = int(tile[29:31])
+#         day = int(tile[31:33])
+#         doy = date(year,month,day)
+#         doy = int(doy.strftime('%j'))
+#         exc_earth = 0.01673 # earth-sun distance in A.U.
+#         dastr = 1.0 + exc_earth * sin(2 * pi * (doy - 93.5) / 365.)
+#         self._d2 = dastr * dastr
+#         return
 
 
     def parNotFound(self, parameter):

@@ -253,7 +253,7 @@ def main(args=None):
         config.initLogAndTrace()
         config.tracer.info(HelloWorld)
         config.logger.info(HelloWorld)
-        config.calcEarthSunDistance2(tile)
+#         config.calcEarthSunDistance2(tile)
         if args.resolution == None:
             resolution = 60
         else:
