@@ -123,7 +123,7 @@ class L2A_Process(object):
 
     def process(self):
         if self.tables.checkAotMapIsPresent():
-            self.config.timestamp('L2A_Process: resolution '+ str(self.config.resolution) + ' m already processed.')
+            self.config.timestamp('L2A_Process: resolution '+ str(self.config.resolution) + ' m already processed')
             return True
 
         astr = 'L2A_Process: processing with resolution ' + str(self.config.resolution) + ' m'
@@ -187,6 +187,7 @@ class L2A_Process(object):
         self.config.logger.info('Post-processing with resolution %d m', self.config.resolution)
         
         res = self.tables.exportBandList()
+        self.tables.postprocess()
         if(self.config.resolution == 60):
             self.config.postprocess()
 

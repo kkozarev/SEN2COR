@@ -1133,7 +1133,7 @@ class L2A_Config(Borg):
 
 
     def set_config_fn(self, value):
-        self._configFn = self._configDir + value + '.xml'
+        self._configFn = value
 
     def set_input_fn(self, value):
         self._inputFn = self._dataDir + value

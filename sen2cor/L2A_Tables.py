@@ -154,18 +154,15 @@ class L2A_Tables(Borg):
         self._L1C_QualityMasksDir = L1C_TILE_ID + QI_DATA
         self._L2A_QualityDataDir = L2A_TILE_ID + QI_DATA
         self._L2A_AuxDataDir = L2A_TILE_ID + AUX_DATA
-
         if(os.path.exists(self._L2A_AuxDataDir) == False):
             mkpath(self._L2A_AuxDataDir)
-            # copy configuration to AUX dir:
-            dummy, basename = os.path.split(config._L2A_TILE_MTD_XML)
+        elif self.config.resolution == 10:
+            # read configuration from AUX dir:            
+            dummy, basename = os.path.split(config.L2A_TILE_MTD_XML)
             fnAux = basename.replace('_MTD_', '_GIP_')
-            target = self._L2A_AuxDataDir + '/' + fnAux
-            copy_file(config.configFn, target)
-
+            config.configFn = os.path.join(self._L2A_AuxDataDir,fnAux)
         if(os.path.exists(self._L2A_QualityDataDir) == False):
             mkpath(self._L2A_QualityDataDir)
-        
         #
         # the File structure:
         #-------------------------------------------------------
@@ -182,8 +179,10 @@ class L2A_Tables(Borg):
         self._L2A_Tile_CLD_File = self._L2A_QualityDataDir + pre + '_CLD' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SNW_File = self._L2A_QualityDataDir + pre + '_SNW' + post + '_' + str(self._resolution) + 'm.jp2'
         self._L2A_Tile_SCL_File = self._L2A_ImgDataDir     + pre + '_SCL' + post + '_' + str(self._resolution) + 'm.jp2'
-#         self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
-        self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
+        if self.config.traceLevel == 'DEBUG':
+            self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '_' + str(self._resolution) + 'm.jp2'
+        else:
+            self._L2A_Tile_PVI_File = self._L2A_QualityDataDir + pre + '_PVI' + post + '.jp2'
 
         self._ImageDataBase = self._L2A_bandDir + '/.database.h5'
         self._TmpFile = self._L2A_bandDir + '/.tmpfile.tif'
@@ -824,19 +823,11 @@ class L2A_Tables(Borg):
                 break
         upsampling = False
         
-#         # 20m bands only: perform an up sampling of VIS from 60 m channels to 20
-#         if(self._resolution == 20):
-#             self.config.tracer.info('perform up sampling of AOT and VIS from 60m channels to 20m')
-#             srcResolution = '_60m'
-#             channels = [17,19]
-#             sourceDir = self._L2A_bandDir.replace('R20m', 'R60m')
-#             upsampling = True
-
         # 10m bands only: perform an up sampling of SCL, AOT, and VIS from 20 m channels to 10
         if(self._resolution == 10):
             self.config.tracer.info('perform up sampling of SCL, AOT and VIS from 20m channels to 10m')
             srcResolution = '_20m'
-            channels = [17,19]
+            channels = [17,18,19]
             sourceDir = self._L2A_bandDir.replace('R10m', 'R20m')
             upsampling = True
         
@@ -1299,7 +1290,8 @@ class L2A_Tables(Borg):
             qii.insert(3, pxlqi2a)
             pviOld = xp.getTree('Quality_Indicators_Info', 'PVI_FILENAME')
             pviNew = etree.Element('PVI_FILENAME')
-            self.createPreviewImage()
+            if self.config.traceLevel != 'DEBUG':            
+                self.createPreviewImage()
             self.config.timestamp('L2A_Tables: preview image exported')
             fn = os.path.basename(self._L2A_Tile_PVI_File)
             fn = fn.replace('.jp2', '')  
@@ -1307,7 +1299,8 @@ class L2A_Tables(Borg):
             qii.replace(pviOld, pviNew)
             xp.export()
 
-
+        if self.config.traceLevel == 'DEBUG':
+            self.createPreviewImage()
    
         # cleanup:
         if(os.path.isfile(self._TmpFile)):
@@ -1364,15 +1357,15 @@ class L2A_Tables(Borg):
             self.config.tracer.fatal('must be a 2 dimensional array')
             self.config.exitError()
             return False
-
-        src_ncols = self.config.ncols
-        src_nrows = self.config.nrows
-        tgt_ncols = 343.0
-        tgt_nrows = 343.0
-  
-        zoomX = float64(tgt_ncols)/float64(src_ncols)
-        zoomY = float64(tgt_nrows)/float64(src_nrows)
-        arr = zoom(arr, ([zoomX,zoomY]), order=0)        
+        if self.config.traceLevel != 'DEBUG':
+            src_ncols = self.config.ncols
+            src_nrows = self.config.nrows
+            tgt_ncols = 343.0
+            tgt_nrows = 343.0
+      
+            zoomX = float64(tgt_ncols)/float64(src_ncols)
+            zoomY = float64(tgt_nrows)/float64(src_nrows)
+            arr = zoom(arr, ([zoomX,zoomY]), order=0)        
 
         arrclip = arr.copy()
         min_ = 0.0
@@ -1382,6 +1375,15 @@ class L2A_Tables(Borg):
         #SIITBX-50: wrong scale was used: 
         scaledArr = uint8(arr*scale/max_)
         return scaledArr
+
+
+    def postprocess(self):
+        dummy, basename = os.path.split(self.config.L2A_TILE_MTD_XML)
+        fnAux = basename.replace('_MTD_', '_GIP_')
+        # copy configuration to AUX dir:
+        target = os.path.join(self._L2A_AuxDataDir,fnAux)
+        copy_file(self.config.configFn, target)
+        return
 
 
     def testDb(self):
