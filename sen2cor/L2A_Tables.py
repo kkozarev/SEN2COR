@@ -1492,7 +1492,7 @@ class L2A_Tables(Borg):
         # The solar zenith array:
         x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
         y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
-        sza = rectBivariateSpline(x,y,self.config.solze_arr)
+        sza = float32(rectBivariateSpline(x,y,self.config.solze_arr))
         rad_sza = radians(sza)
         cos_sza = float32(cos(rad_sza))
  
@@ -1500,10 +1500,10 @@ class L2A_Tables(Borg):
         c1     = float32(self.config.c1[bandIndex])
         Es     = float32(self.config.e0[bandIndex])
         rho    = indataArr.astype(float32)
-        sc_rho = float32(self.config.dnScale)
-        sc_dn  = 1.0 / c1
-
-        rad = sc_dn * rho * cos_sza * Es / (sc_rho * pi)
+        sc = float32(1 / (c1 * self.config.dnScale))
+        rho_cos_sza_Es_sc = float32(rho * cos_sza * Es * sc)
+        pi32 = float32(pi)
+        rad = rho_cos_sza_Es_sc / pi32
         return rad
 
 
