@@ -1471,6 +1471,7 @@ class L2A_Tables(Borg):
             Additional inputs from L1 user Product_Image_Characteristics metadata:
             * QUANTIFICATION_VALUE: the scaling factor for converting DN to reflectance.
             * SOLAR_IRRADIANCE: the mean solar exoatmospheric irradiances for each band.
+            * d2: the sun-earth distance, calculated from metadata as d2 = 1.0 / U
 
             Additional inputs from L1 tile Geometric_Info metadata:
             * Sun_Angles_Grid.Zenith.Values: the interpolated zenith angles grid.
@@ -1493,48 +1494,23 @@ class L2A_Tables(Borg):
         x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
         y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
         sza = float32(rectBivariateSpline(x,y,self.config.solze_arr))
-        rad_sza = radians(sza)
-        cos_sza = float32(cos(rad_sza))
  
-        # reflectance to ratiance modification according to Rolf, 27/10/2015:
-        c1     = float32(self.config.c1[bandIndex])
-        Es     = float32(self.config.e0[bandIndex])
-        rho    = indataArr.astype(float32)
-        sc = float32(1 / (c1 * self.config.dnScale))
-        rho_cos_sza_Es_sc = float32(rho * cos_sza * Es * sc)
-        pi32 = float32(pi)
-        rad = rho_cos_sza_Es_sc / pi32
+        # Reflectance to ratiance modification according to Rolf, 27/10/2015:
+        rho = indataArr.astype(float32)
+        c1  = float32(self.config.c1[bandIndex])
+        Es  = float32(self.config.e0[bandIndex])
+        sc  = float32(1 / (c1 * self.config.dnScale))
+        # adding again the earth sun correction d2 = 1/u:
+        pi32_d2 = float32(pi) * self.config.d2
+        rad     = zeros_like(rho)
+        # To reduce the memory consumption for 10m images:
+        for i in range(nrows):
+            rad_sza = float32(radians(sza[i,:]))
+            cos_sza = float32(cos(rad_sza))
+            rho_cos_sza_Es_sc = float32(rho[i,:] * cos_sza * Es * sc)        
+            rad[i,:] = rho_cos_sza_Es_sc / pi32_d2
+
         return rad
-
-
-    def TOA_rad2refl(self, index):
-        # this converts TOA radiance to reflectance:
-        # a helper function for converting ATCOR Input to L2A_SceneClass
-        # only for testing purposes - not needed in normal operation
-        
-        if(self.config.resolution == 10):
-            validBand = [None,1,2,3,None,None,None,7,None,None,None,None,None]
-        else:
-            validBand = [0,1,2,3,4,5,6,None,7,8,9,10,11]
-        bandIndex = validBand[index]
-        print self.getBandNameFromIndex(bandIndex)
-        
-        if(bandIndex == None):
-            self.config.tracer.debug('Wrong band index %02d for selected resolution %02d', index, self.config.resolution)
-            self.config.exitError()
-            
-        DN = self.getBand(bandIndex)
-        nrows, ncols, count = self.getBandSize(bandIndex)
-        e0 = self.config.e0[bandIndex]
-        c0 = 0
-        c1 = self.config.c1[bandIndex]
-        x = arange(nrows, dtype=float32) / (nrows-1) * self.config.solze_arr.shape[0]
-        y = arange(ncols, dtype=float32) / (ncols-1) * self.config.solze_arr.shape[1]
-        szi = rectBivariateSpline(x,y,self.config.solze_arr)
-        sza = cos(radians(szi))
-        L = c0 + c1 * DN
-        rtoa = pi * L / (e0 * sza) * c1
-        return rtoa
 
 
     def getDataType(self, index):

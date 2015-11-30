@@ -2061,7 +2061,7 @@ class L2A_Config(Borg):
         self._dnScale = float32(pic.QUANTIFICATION_VALUE.text)
         rc = pic.Reflectance_Conversion
         # The earth sun distance correction factor, already squared:
-        self._d2 = float32(rc.U.text)             
+        self._d2 = 1.0 / float32(rc.U.text)             
 
         if firstInit == True:
             # copy L2A schemes from config_dir into rep_info:    
