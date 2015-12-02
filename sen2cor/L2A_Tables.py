@@ -1479,12 +1479,12 @@ class L2A_Tables(Borg):
         '''
         nrows = self.config.nrows
         ncols = self.config.ncols
- 
-        # The digital number (DN) as float:         
+       
         if(self.config.resolution == 10):
             validBand = [None,0,1,2,None,None,None,3,None,None,None,None,None]
         else:
             validBand = [0,1,2,3,4,5,6,None,7,8,9,10,11]
+        
         bandIndex = validBand[index]
         if(bandIndex == None):
             self.config.tracer.debug('Wrong band index %02d for selected resolution %02d', index, self.config.resolution)
@@ -1500,10 +1500,17 @@ class L2A_Tables(Borg):
         c1  = float32(self.config.c1[bandIndex])
         Es  = float32(self.config.e0[bandIndex])
         sc  = float32(1 / (c1 * self.config.dnScale))
-        # adding again the earth sun correction d2 = 1/u:
+        
+        # adding again the earth sun correction d2 = 1.0/U:
         pi32_d2 = float32(pi) * self.config.d2
-        rad     = zeros_like(rho)
+
+        # The final formaula is:
+        # rad = rho * cos(radians(sza)) * Es * sc / (pi * d2)
+        # where: d2 = 1.0 / U
+        # scale: 1 / (0.001 * 1000) = 1 (default)
+        
         # To reduce the memory consumption for 10m images:
+        rad = zeros_like(rho)
         for i in range(nrows):
             rad_sza = float32(radians(sza[i,:]))
             cos_sza = float32(cos(rad_sza))

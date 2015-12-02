@@ -19,8 +19,8 @@ class L2A_Config(Borg):
     _shared = {}
     def __init__(self, sourceDir = False):
         self._processorName = 'Sentinel-2 Level 2A Prototype Processor (Sen2Cor)'
-        self._processorVersion = '2.0.5'
-        self._processorDate = '2015.11.01'
+        self._processorVersion = '2.0.6'
+        self._processorDate = '2015.12.02'
         self._productVersion = '13'
 
         if(sourceDir):
@@ -66,7 +66,6 @@ class L2A_Config(Borg):
             self._adj_km = 1.0
             self._ch940 = array([8,8,9,9,0,0])
             self._cellsize = 0 # pixelsize (m), cellsize (km)
-            self._d2 = None
             self._dem_unit = 0 # [meter] is default DEM heigh unit unit
             self._ibrdf = 0         # brdf correction
             self._thr_g = 0.25      # lower bound for brdf correction
@@ -120,11 +119,11 @@ class L2A_Config(Borg):
             self._wl1900a = array([1.780, 1.970])    # range for interpolation
             self._wv_thr_cirrus = 0.60
             self._sc_lp_blu = 1.0
+            self._d2 = 1.0 # this is a constant, see explanation in line 2061
             self._timestamp = datetime.now()
             self._c0 = None
             self._c1 = None
             self._e0 = None
-            self._d2 = None
             self._wvlsen = None
             self._fwhm = None
             self._acOnly = False
@@ -2059,9 +2058,12 @@ class L2A_Config(Borg):
         xp = L2A_XmlParser(self, 'UP1C') 
         pic = xp.getTree('General_Info', 'Product_Image_Characteristics')        
         self._dnScale = float32(pic.QUANTIFICATION_VALUE.text)
-        rc = pic.Reflectance_Conversion
+        # rc = pic.Reflectance_Conversion
         # The earth sun distance correction factor, already squared:
-        self._d2 = 1.0 / float32(rc.U.text)             
+        # Attention! L1C is already corrected by the Earth-Sun distance.
+        # ATCOR expects the uncorrected TOA rad as input and thus applies d2
+        # in order to rescale TOA rad. As this is wrong, d2 is permanently fixed to 1.0 in the constructor
+        # self._d2 = 1.0 / float32(rc.U.text)
 
         if firstInit == True:
             # copy L2A schemes from config_dir into rep_info:    
@@ -2332,18 +2334,6 @@ class L2A_Config(Borg):
         f.write(str(tTotalPercentage) + '\n')
         f.close()
         return
-
-
-#     def calcEarthSunDistance2(self, tile):
-#         year =  int(tile[25:29])
-#         month = int(tile[29:31])
-#         day = int(tile[31:33])
-#         doy = date(year,month,day)
-#         doy = int(doy.strftime('%j'))
-#         exc_earth = 0.01673 # earth-sun distance in A.U.
-#         dastr = 1.0 + exc_earth * sin(2 * pi * (doy - 93.5) / 365.)
-#         self._d2 = dastr * dastr
-#         return
 
 
     def parNotFound(self, parameter):

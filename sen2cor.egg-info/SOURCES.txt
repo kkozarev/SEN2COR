@@ -4,7 +4,6 @@ README.txt
 SETUP.pdf
 setup.cfg
 setup.py
-sen2cor/L2A_AtmCorr.so
 sen2cor/L2A_Borg.py
 sen2cor/L2A_Config.py
 sen2cor/L2A_Library.py
@@ -146,6 +145,7 @@ sen2cor/cfg/DICO/1.0/SY/representation/representation.xsd
 sen2cor/cfg/DICO/1.0/SY/spatio/spatio.xsd
 sen2cor/cfg/DICO/1.0/SY/tile/tile.xsd
 sen2cor/lib/GlobalSnowMap.tiff
+sen2cor/lib/Readme.txt
 sen2cor/lib/Thumbs.db
 sen2cor/lib/__init__.py
 sen2cor/lib/10/h99000_wv04_rura.atm
