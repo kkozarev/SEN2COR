@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="References">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Lib_Dir"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Lib_Dir">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Atmospheric_Correction">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="References"/>			
+				<xs:element ref="Sensor"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Level-2A_CAL_AC_Ground_Image_Processing_Parameter">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Atmospheric_Correction"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Calibration">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Band_List"/>
+			</xs:all>
+			<xs:attribute name="units">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="(mW cm-2 sr-1 um-1), L = c0 + c1 * DN"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>	
+
+	<xs:element name="fwhm">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="0"/>
+				<xs:maxInclusive value="1"/>	
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:simpleType name="ST_wavelength">
+		<xs:restriction base="xs:decimal">
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="10"/>	
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:element name="wavelength">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="ST_wavelength">
+					<xs:attribute name="c0">
+						<xs:simpleType>
+							<xs:restriction base="xs:decimal">
+								<xs:minInclusive value="0"/>
+								<xs:maxInclusive value="1"/>	
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="c1">
+						<xs:simpleType>
+							<xs:restriction base="xs:decimal">
+								<xs:minInclusive value="0"/>
+								<xs:maxInclusive value="1"/>	
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="Resolution">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Band_List"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="Sensor">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Resolution"/>
+				<xs:element ref="Calibration"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="Band_List">
+		<xs:complexType>
+			<xs:choice>
+				<xs:element ref="wavelength" maxOccurs="unbounded"/>
+				<xs:element ref="fwhm" maxOccurs="unbounded"/>
+			</xs:choice>
+		</xs:complexType>
+	</xs:element>
+	
+</xs:schema>

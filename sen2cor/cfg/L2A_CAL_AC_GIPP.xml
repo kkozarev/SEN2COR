@@ -1,0 +1,49 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<Level-2A_CAL_AC_Ground_Image_Processing_Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="L2A_CAL_AC_GIPP.xsd">
+  <Atmospheric_Correction>
+    <References>
+      <Lib_Dir>lib</Lib_Dir>
+    </References>
+    <Sensor>
+      <Resolution>
+        <Band_List>
+          <!-- full width half maximum -->
+          <fwhm>0.018800</fwhm>
+          <fwhm>0.064400</fwhm>
+          <fwhm>0.034800</fwhm>
+          <fwhm>0.028800</fwhm>
+          <fwhm>0.014400</fwhm>
+          <fwhm>0.014800</fwhm>
+          <fwhm>0.018800</fwhm>
+          <fwhm>0.014400</fwhm>
+          <!-- B8 -->
+          <fwhm>0.022800</fwhm>
+          <!-- B8A -->
+          <fwhm>0.019200</fwhm>
+          <fwhm>0.028800</fwhm>
+          <fwhm>0.088400</fwhm>
+          <fwhm>0.172800</fwhm>
+        </Band_List>
+      </Resolution>
+      <Calibration units="(mW cm-2 sr-1 um-1), L = c0 + c1 * DN">
+        <Band_List>
+          <wavelength c0="0.00000" c1="0.001">0.442250</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.492225</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.560310</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.663085</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.703959</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.742381</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.781725</wavelength>
+          <wavelength c0="0.00000" c1="0.001">0.833331</wavelength>
+          <!-- B8 -->
+          <wavelength c0="0.00000" c1="0.001">0.865816</wavelength>
+          <!-- B8A -->
+          <wavelength c0="0.00000" c1="0.001">0.942251</wavelength>
+          <wavelength c0="0.00000" c1="0.0005">1.373680</wavelength>
+          <wavelength c0="0.00000" c1="0.0002">1.609431</wavelength>
+          <wavelength c0="0.00000" c1="0.00005">2.193888</wavelength>
+        </Band_List>
+      </Calibration>
+    </Sensor>
+  </Atmospheric_Correction>
+</Level-2A_CAL_AC_Ground_Image_Processing_Parameter>

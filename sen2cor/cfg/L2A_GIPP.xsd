@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+	<xs:element name="Flags">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="WV_Correction"/>
+				<xs:element ref="VIS_Update_Mode"/>
+				<xs:element ref="WV_Watermask"/>
+				<xs:element ref="Cirrus_Correction"/>
+				<xs:element ref="BRDF_Correction"/>
+				<xs:element ref="BRDF_Lower_Bound"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Lib_Dir">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:enumeration value="lib"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+		
+	<xs:element name="Median_Filter">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:minInclusive value="0"/>
+				<xs:maxInclusive value="10"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>		
+	
+	<xs:element name="Nr_Processes">
+		<xs:simpleType>
+			<xs:union>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="AUTO"/>					
+					</xs:restriction>
+				</xs:simpleType>
+				<xs:simpleType>
+					<xs:restriction base="xs:unsignedByte">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="100"/>				
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:union>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="References">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Atm_Data_Filename"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Calibration">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="DEM_Unit"/>
+				<xs:element ref="Adj_Km"/>
+				<xs:element ref="Visibility"/>
+				<xs:element ref="Altitude"/>
+				<xs:element ref="Smooth_WV_Map"/>
+				<xs:element ref="WV_Threshold_Cirrus"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Log_Level"> <!-- can be: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL -->
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:enumeration value="INFO"/>
+				<xs:enumeration value="NOTSET"/>
+				<xs:enumeration value="DEBUG"/>
+				<xs:enumeration value="WARNING"/>
+				<xs:enumeration value="ERROR"/>
+				<xs:enumeration value="CRITICAL"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="DS_Scheme_1C">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="DS_Scheme_2A">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="UP_Scheme_1C">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>	
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="UP_Scheme_2A">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="GIPP_Scheme">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="SC_Scheme">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="AC_Scheme">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+		
+	<xs:element name="DEM_Directory">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<!-- <xs:enumeration value="NONE"/>  -->
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="DEM_Reference" type="xs:anyURI"/>
+		
+	<xs:element name="Common_Section">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Log_Level"/>
+				<xs:element ref="Target_Directory"/>
+				<xs:element ref="DEM_Directory"/>
+				<xs:element ref="DEM_Reference"/>
+				<xs:element ref="UP_Scheme_1C"/>
+				<xs:element ref="UP_Scheme_2A"/>
+				<xs:element ref="Tile_Scheme_1C"/>
+				<xs:element ref="Tile_Scheme_2A"/>
+				<xs:element ref="DS_Scheme_1C"/>
+				<xs:element ref="DS_Scheme_2A"/>
+				<xs:element ref="GIPP_Scheme"/>
+				<xs:element ref="SC_Scheme"/>
+				<xs:element ref="AC_Scheme"/>
+				<xs:element ref="Nr_Processes"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Tile_Scheme_1C">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="Tile_Scheme_2A">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.xsd"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="BRDF_Correction">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:enumeration value="0"/>
+				<xs:enumeration value="1"/>
+				<xs:enumeration value="2"/>
+				<xs:enumeration value="11"/>
+				<xs:enumeration value="12"/>
+				<xs:enumeration value="22"/>
+				<xs:enumeration value="21"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="VIS_Update_Mode">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:enumeration value="0"/>
+				<xs:enumeration value="1"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="BRDF_Lower_Bound">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="0.1"/> <!-- from the ATDB -->
+				<xs:maxInclusive value="0.25"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="Target_Directory">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Atm_Data_Filename">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:pattern value="\S*\.atm"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+
+	<xs:element name="Scene_Classification">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Filters"/>				
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Filters">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Median_Filter"/>				
+			</xs:all>
+		</xs:complexType>
+	</xs:element>	
+	
+	<xs:element name="Atmospheric_Correction">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="References"/>
+				<xs:element ref="Flags"/>
+				<xs:element ref="Calibration"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="Level-2A_Ground_Image_Processing_Parameter">
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="Common_Section"/>
+				<xs:element ref="Scene_Classification"/>
+				<xs:element ref="Atmospheric_Correction"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Adj_Km">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="0"/>
+				<xs:maxInclusive value="10"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Altitude">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="0"/>
+				<xs:maxInclusive value="2.5"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="DEM_Unit">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:enumeration value="0"/>
+				<xs:enumeration value="1"/>
+				<xs:enumeration value="2"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Visibility">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="5"/>
+				<xs:maxInclusive value="120"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="WV_Watermask">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:enumeration value="0"/>
+				<xs:enumeration value="1"/>
+				<xs:enumeration value="2"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Smooth_WV_Map">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="0"/>
+				<xs:maxInclusive value="300"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="WV_Correction">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:minInclusive value="0"/>
+				<xs:maxInclusive value="4"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Cirrus_Correction">
+		<xs:simpleType>
+			<xs:restriction base="xs:byte">
+				<xs:enumeration value="0"/>
+				<xs:enumeration value="1"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="WV_Threshold_Cirrus">
+		<xs:simpleType>
+			<xs:restriction base="xs:decimal">
+				<xs:minInclusive value="0.1"/>
+				<xs:maxInclusive value="1.0"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+</xs:schema>
