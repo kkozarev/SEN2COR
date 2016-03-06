@@ -11,19 +11,17 @@
 #	'python setup.py install' and follow the instructions ...
 #
 
-from setuptools import setup, find_packages
-from distutils.dir_util import mkpath, copy_tree
+from setuptools import setup
+from distutils.dir_util import mkpath
 from distutils.file_util import copy_file
 import os, sys, platform
-import urllib
-import zipfile, tarfile
 
 name = 'sen2cor'
 #
 # This needs to be changed with each new version:
 #------------------------------------------------
-version = '2.0.6'
-longVersion = '02.00.06'
+version = '2.1.2'
+longVersion = '02.01.02'
 #
 # Do not change anything below:
 #----------------------------------------------------------------------------
@@ -134,6 +132,7 @@ def copyConfiguration():
 		except:
 			sys.stderr.write('Cannot create the L2A_Process.bash script under:\n' + SEN2COR_HOME + '\n')
 			return False
+		
 		# create the glymur configuration file for OpenJPEG2:
 		glymurrc = '[library]\n'
 		glymurrc += 'openjp2: ' + libOpj2Target + '\n'

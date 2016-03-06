@@ -1,18 +1,12 @@
 #!/usr/bin/env python
 
 from numpy import *
-from scipy import ndimage
-from scipy import stats
-from scipy.signal import medfilt2d
 from scipy.signal import medfilt
 from scipy.ndimage import map_coordinates
 from scipy import interpolate as sp
-from scipy import stats
 from scipy.ndimage.filters import uniform_filter
-from matplotlib import pyplot as plt
 
-import time
-import os, sys, fnmatch
+import sys, os
 try:
     import Image
 except:
@@ -54,21 +48,11 @@ def showImage(arr):
     scale = 255.0
     scaledArr = (arr-arrmin).astype(float32) / float32(arrlen) * scale
     arr = (scaledArr.astype(uint8))
-    #plt.imshow(arr, interpolation='nearest')
-    #plt.show()
     img = Image.fromarray(arr)
     img.show()
     return True
 
 
-def showMask(alist, row, col):
-    arr = zeros(row,col)
-    arr[alist] = 255
-    img = Image.fromarray(arr)
-    img.show()
-    return True
-
-    
 def reverse(a): return a[::-1]
 
 
@@ -1560,9 +1544,6 @@ def adjacency_weight(nadj_regions, adj_km, pixelsize):
 
 #-----------------------------------------------------------------------
 def load_wv_tables_summer():
-    from L2A_Config import L2A_Config
-    msg = 'Load water vapour tables for summer period'
-    L2A_Config().tracer.debug(msg)
 # Output:
 #    wv_av = 1000
 #      uu1 = wv values (cm*1000)
@@ -1635,9 +1616,6 @@ def load_wv_tables_summer():
 
 #-----------------------------------------------------------------------------------
 def load_wv_tables_winter():
-    from L2A_Config import L2A_Config
-    msg = 'Load water vapour tables for winter period'
-    L2A_Config().tracer.debug(msg)
 #
 # Output:
 #    wv_av =  400
@@ -1688,29 +1666,6 @@ def load_wv_tables_winter():
     uu1_altit[30:36,3] = array([251, 236, 222, 208, 196, 184])
 
     return _ret()
-
-#------------------------------------------------------------------------------------------
-def check_required_cirrus_bands(unit_log, iwaterwv, red_band, nir_band, snow_band, swir2_band):
-# check if water vapor band, swir2_band, nir_band, and (red or snow band) exist
-    from L2A_Config import L2A_Config
-    ierror = 1
-    if (iwaterwv == 0):
-        L2A_Config().tracer.error('Cirrus correction requires calculation of water vapor map (iwaterwv > 0)')
-        return ierror
-
-    elif (nir_band <= 0):
-        L2A_Config().tracer.error('Error: cirrus correction requires a NIR band')
-        return ierror
-
-    elif (swir2_band <= 0):
-        L2A_Config().tracer.error('Error: cirrus correction requires a SWIR2 band (2.1 - 2.2 micron)')
-        return ierror
-
-    elif (bitwise_and(red_band <= 0, snow_band <= 0)):
-        L2A_Config().tracer.error('Error: cirrus correction requires a red band or a 1.6 micron band')
-        return ierror
-
-    return 0
 
 #------------------------------------------------------------------------------------------
 def read_wv_trans945_1375(gamma, solze, h1_cirrus):

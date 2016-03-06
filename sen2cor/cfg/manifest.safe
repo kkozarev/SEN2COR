@@ -6,7 +6,7 @@
 	GENERATOR_ID:  $Id: ManifestBuilderS2.C,v 1.6 2014/08/05 14:31:35 enrcar Exp $
 ================================================================================= -->
 
-   <xfdu:XFDU xmlns:xfdu="urn:ccsds:schema:xfdu:1"
+<xfdu:XFDU xmlns:xfdu="urn:ccsds:schema:xfdu:1"
  xsi:schemaLocation="urn:ccsds:schema:xfdu:1 resources/xsd/int/esa/safe/sentinel/1.1/sentinel-2/msi/archive_l1c_user_product/xfdu.xsd"
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
  xmlns:safe="http://www.esa.int/safe/sentinel/1.1"
